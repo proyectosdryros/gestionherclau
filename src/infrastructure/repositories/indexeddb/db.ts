@@ -7,6 +7,7 @@ import Dexie, { Table } from 'dexie';
 import type { HermanoDTO, FamiliarDTO, MeritoDTO } from '@/lib/validations/hermano.schemas';
 import type { ReciboDTO, PagoDTO } from '@/lib/validations/tesoreria.schemas';
 import type { PuestoDTO, PapeletaDTO } from '@/lib/validations/cofradia.schemas';
+import type { EnserDTO, MovimientoEnserDTO } from '@/lib/validations/priostia.schemas';
 
 /**
  * SyncQueue Item - para sincronización offline
@@ -37,6 +38,8 @@ export class HermandadesDB extends Dexie {
     pagos!: Table<PagoDTO>;
     papeletas!: Table<PapeletaDTO>;
     puestos!: Table<PuestoDTO>;
+    enseres!: Table<EnserDTO>;
+    movimientos_enseres!: Table<MovimientoEnserDTO>;
     syncQueue!: Table<SyncQueueItem>;
 
     constructor() {
@@ -50,15 +53,36 @@ export class HermandadesDB extends Dexie {
         });
 
         this.version(2).stores({
-            // Mantenemos lo anterior
             hermanos: 'id, numeroHermano, dni, email, estado, [estado+cuotasAlDia], fechaAlta',
             familiares: 'id, hermanoId, tipo',
             meritos: 'id, hermanoId, fecha, tipo',
             syncQueue: 'id, [status+priority], [status+nextRetryAt], localTimestamp, entityType',
-
-            // Nuevas tablas de Tesorería
             recibos: 'id, hermanoId, estado, tipo, fechaEmision',
             pagos: 'id, reciboId, fechaPago, metodoPago',
+        });
+
+        this.version(3).stores({
+            hermanos: 'id, numeroHermano, dni, email, estado, [estado+cuotasAlDia], fechaAlta',
+            familiares: 'id, hermanoId, tipo',
+            meritos: 'id, hermanoId, fecha, tipo',
+            syncQueue: 'id, [status+priority], [status+nextRetryAt], localTimestamp, entityType',
+            recibos: 'id, hermanoId, estado, tipo, fechaEmision',
+            pagos: 'id, reciboId, fechaPago, metodoPago',
+            papeletas: 'id, [hermanoId+anio], hermanoId, anio, estado, puestoAsignadoId',
+            puestos: 'id, nombre, categoria, seccion',
+        });
+
+        this.version(4).stores({
+            hermanos: 'id, numeroHermano, dni, email, estado, [estado+cuotasAlDia], fechaAlta',
+            familiares: 'id, hermanoId, tipo',
+            meritos: 'id, hermanoId, fecha, tipo',
+            syncQueue: 'id, [status+priority], [status+nextRetryAt], localTimestamp, entityType',
+            recibos: 'id, hermanoId, estado, tipo, fechaEmision',
+            pagos: 'id, reciboId, fechaPago, metodoPago',
+            papeletas: 'id, [hermanoId+anio], hermanoId, anio, estado, puestoAsignadoId',
+            puestos: 'id, nombre, categoria, seccion',
+            enseres: 'id, nombre, categoria, estado, ubicacion',
+            movimientos_enseres: 'id, enserId, tipo, fecha, responsable',
         });
 
         // Hooks para encriptación/desencriptación
@@ -67,20 +91,11 @@ export class HermandadesDB extends Dexie {
         this.hermanos.hook('updating', this.encryptSensitiveFields);
     }
 
-    /**
-     * Encripta campos sensibles antes de guardar
-     * TODO: Implementar encriptación AES-256 real con crypto-js
-     */
     private encryptSensitiveFields(primKey: any, obj: any) {
-        // Placeholder - implementar en Sprint 3-4
         return obj;
     }
 
-    /**
-     * Desencripta campos sensibles al leer
-     */
     private decryptSensitiveFields(obj: any) {
-        // Placeholder - implementar en Sprint 3-4
         return obj;
     }
 }
