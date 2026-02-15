@@ -5,6 +5,7 @@
 
 import Dexie, { Table } from 'dexie';
 import type { HermanoDTO, FamiliarDTO, MeritoDTO } from '@/lib/validations/hermano.schemas';
+import type { ReciboDTO, PagoDTO } from '@/lib/validations/tesoreria.schemas';
 
 /**
  * SyncQueue Item - para sincronización offline
@@ -31,23 +32,30 @@ export class HermandadesDB extends Dexie {
     hermanos!: Table<HermanoDTO>;
     familiares!: Table<FamiliarDTO>;
     meritos!: Table<MeritoDTO>;
+    recibos!: Table<ReciboDTO>;
+    pagos!: Table<PagoDTO>;
     syncQueue!: Table<SyncQueueItem>;
 
     constructor() {
         super('hermandades_db');
 
         this.version(1).stores({
-            // Hermanos - índices compuestos para búsquedas eficientes
             hermanos: 'id, numeroHermano, dni, email, estado, [estado+cuotasAlDia], fechaAlta',
-
-            // Familiares - índice por hermano
             familiares: 'id, hermanoId, tipo',
-
-            // Méritos - índice por hermano y fecha
             meritos: 'id, hermanoId, fecha, tipo',
-
-            // SyncQueue - índices para procesamiento de cola
             syncQueue: 'id, [status+priority], [status+nextRetryAt], localTimestamp, entityType',
+        });
+
+        this.version(2).stores({
+            // Mantenemos lo anterior
+            hermanos: 'id, numeroHermano, dni, email, estado, [estado+cuotasAlDia], fechaAlta',
+            familiares: 'id, hermanoId, tipo',
+            meritos: 'id, hermanoId, fecha, tipo',
+            syncQueue: 'id, [status+priority], [status+nextRetryAt], localTimestamp, entityType',
+
+            // Nuevas tablas de Tesorería
+            recibos: 'id, hermanoId, estado, tipo, fechaEmision',
+            pagos: 'id, reciboId, fechaPago, metodoPago',
         });
 
         // Hooks para encriptación/desencriptación
