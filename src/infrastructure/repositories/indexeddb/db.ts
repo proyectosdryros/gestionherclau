@@ -6,6 +6,7 @@
 import Dexie, { Table } from 'dexie';
 import type { HermanoDTO, FamiliarDTO, MeritoDTO } from '@/lib/validations/hermano.schemas';
 import type { ReciboDTO, PagoDTO } from '@/lib/validations/tesoreria.schemas';
+import type { PuestoDTO, PapeletaDTO } from '@/lib/validations/cofradia.schemas';
 
 /**
  * SyncQueue Item - para sincronización offline
@@ -34,6 +35,8 @@ export class HermandadesDB extends Dexie {
     meritos!: Table<MeritoDTO>;
     recibos!: Table<ReciboDTO>;
     pagos!: Table<PagoDTO>;
+    papeletas!: Table<PapeletaDTO>;
+    puestos!: Table<PuestoDTO>;
     syncQueue!: Table<SyncQueueItem>;
 
     constructor() {
