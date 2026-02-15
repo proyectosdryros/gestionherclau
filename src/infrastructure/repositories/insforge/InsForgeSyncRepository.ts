@@ -6,7 +6,7 @@ export class InsForgeSyncRepository implements SyncRepository {
     async push(table: string, data: any[]): Promise<void> {
         if (data.length === 0) return;
 
-        const { error } = await insforge
+        const { error } = await insforge.database
             .from(table)
             .upsert(data, {
                 onConflict: 'id',
@@ -21,7 +21,7 @@ export class InsForgeSyncRepository implements SyncRepository {
     async delete(table: string, ids: string[]): Promise<void> {
         if (ids.length === 0) return;
 
-        const { error } = await insforge
+        const { error } = await insforge.database
             .from(table)
             .delete()
             .in('id', ids);
@@ -33,7 +33,7 @@ export class InsForgeSyncRepository implements SyncRepository {
     }
 
     async pull(table: string, lastSyncTimestamp: string | null): Promise<any[]> {
-        let query = insforge.from(table).select('*');
+        let query = insforge.database.from(table).select('*');
 
         if (lastSyncTimestamp) {
             query = query.gt('updated_at', lastSyncTimestamp);

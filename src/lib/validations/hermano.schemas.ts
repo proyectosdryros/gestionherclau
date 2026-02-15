@@ -20,26 +20,42 @@ function validateDniCheckDigit(dni: string): boolean {
 
 export const DniSchema = z
     .string()
-    .regex(DNI_REGEX, 'Formato DNI inválido (8 dígitos + letra)')
-    .refine(validateDniCheckDigit, 'Letra de control DNI incorrecta')
-    .transform((val) => val.toUpperCase());
+    .nullish()
+    .transform((val) => (val === '' ? null : val))
+    .refine((val) => {
+        if (!val) return true;
+        return DNI_REGEX.test(val);
+    }, 'Formato DNI inválido (8 dígitos + letra)')
+    .refine((val) => {
+        if (!val) return true;
+        return validateDniCheckDigit(val);
+    }, 'Letra de control DNI incorrecta')
+    .transform((val) => val?.toUpperCase() ?? null);
 
 /**
  * Email Schema
  */
 export const EmailSchema = z
     .string()
-    .email('Formato de email inválido')
-    .transform((val) => val.toLowerCase().trim());
+    .nullish()
+    .transform((val) => (val === '' ? null : val))
+    .refine((val) => {
+        if (!val) return true;
+        return z.string().email().safeParse(val).success;
+    }, 'Formato de email inválido')
+    .transform((val) => val?.toLowerCase().trim() ?? null);
 
 /**
  * Teléfono Schema (formato español)
  */
 export const TelefonoSchema = z
     .string()
-    .regex(/^[679]\d{8}$/, 'Teléfono debe ser 9 dígitos empezando por 6, 7 o 9')
-    .optional()
-    .nullable();
+    .nullish()
+    .transform((val) => (val === '' ? null : val))
+    .refine((val) => {
+        if (!val) return true;
+        return /^[679]\d{8}$/.test(val);
+    }, 'Teléfono debe ser 9 dígitos empezando por 6, 7 o 9');
 
 /**
  * Estado Hermano Schema
@@ -55,7 +71,7 @@ export const EstadoHermanoSchema = z.enum([
  * Consentimientos RGPD Schema
  */
 export const ConsentimientosRGPDSchema = z.object({
-    datos: z.boolean().describe('Consentimiento tratamiento datos personales'),
+    datos: z.boolean().refine(v => v === true, 'Debe aceptar el tratamiento de datos'),
     imagenes: z.boolean().describe('Consentimiento uso de imágenes'),
     comunicaciones: z.boolean().describe('Consentimiento envío comunicaciones'),
 });
@@ -76,10 +92,11 @@ export const HermanoSchema = z.object({
     id: z.string().uuid(),
     numeroHermano: z.number().int().positive(),
     nombre: z.string().min(2, 'Nombre debe tener al menos 2 caracteres').max(50),
+    apodo: z.string().max(50).optional().nullable(),
     apellido1: z.string().min(2, 'Primer apellido debe tener al menos 2 caracteres').max(50),
     apellido2: z.string().max(50).nullable(),
     dni: DniSchema,
-    email: EmailSchema.nullable(),
+    email: EmailSchema,
     telefono: TelefonoSchema,
     fechaNacimiento: z.date().max(new Date(), 'Fecha de nacimiento no puede ser futura').nullable(),
     fechaAlta: z.date(),
@@ -95,6 +112,8 @@ export const HermanoSchema = z.object({
 export const HermanoCreateSchema = HermanoSchema.omit({
     id: true,
     auditoria: true,
+    estado: true,
+    cuotasAlDia: true,
 }).extend({
     numeroHermano: z.number().int().positive().optional(), // Auto-generado si no se proporciona
 });
@@ -105,8 +124,9 @@ export const HermanoCreateSchema = HermanoSchema.omit({
 export const HermanoUpdateSchema = HermanoSchema.omit({
     id: true,
     numeroHermano: true,
-    dni: true,
     auditoria: true,
+    estado: true,
+    cuotasAlDia: true,
 }).partial();
 
 /**

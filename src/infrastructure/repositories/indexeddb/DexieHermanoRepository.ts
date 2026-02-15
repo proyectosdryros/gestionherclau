@@ -21,7 +21,7 @@ function dtoToEntity(dto: HermanoDTO): Hermano {
         dto.nombre,
         dto.apellido1,
         dto.apellido2,
-        DNI.create(dto.dni),
+        dto.dni ? DNI.create(dto.dni) : null,
         dto.email ? Email.create(dto.email) : null,
         dto.telefono ?? null,
         dto.fechaNacimiento,
@@ -29,7 +29,8 @@ function dtoToEntity(dto: HermanoDTO): Hermano {
         dto.estado,
         dto.cuotasAlDia,
         dto.consentimientos,
-        dto.auditoria
+        dto.auditoria,
+        dto.apodo ?? null
     );
 }
 
@@ -41,9 +42,10 @@ function entityToDto(entity: Hermano): HermanoDTO {
         id: entity.id,
         numeroHermano: entity.numeroHermano,
         nombre: entity.nombre,
+        apodo: entity.apodo,
         apellido1: entity.apellido1,
         apellido2: entity.apellido2,
-        dni: entity.dni.getValue(),
+        dni: entity.dni?.getValue() ?? null,
         email: entity.email?.getValue() ?? null,
         telefono: entity.telefono,
         fechaNacimiento: entity.fechaNacimiento,
@@ -92,12 +94,12 @@ export class DexieHermanoRepository implements HermanoRepository {
 
         let results = await query.toArray();
 
-        // Búsqueda en texto (nombre, apellidos, DNI)
+        // Búsqueda en texto (nombre, apodo, apellidos, DNI)
         if (filters?.search) {
             const searchLower = filters.search.toLowerCase();
             results = results.filter((dto) => {
-                const fullName = `${dto.nombre} ${dto.apellido1} ${dto.apellido2 ?? ''}`.toLowerCase();
-                const dni = dto.dni.toLowerCase();
+                const fullName = `${dto.nombre} ${dto.apodo ?? ''} ${dto.apellido1} ${dto.apellido2 ?? ''}`.toLowerCase();
+                const dni = dto.dni?.toLowerCase() ?? '';
                 return fullName.includes(searchLower) || dni.includes(searchLower);
             });
         }

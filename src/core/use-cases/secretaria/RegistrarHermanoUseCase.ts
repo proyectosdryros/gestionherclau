@@ -11,9 +11,10 @@ import { v7 as uuidv7 } from 'uuid';
 
 export interface RegistrarHermanoInput {
     nombre: string;
+    apodo?: string | null;
     apellido1: string;
     apellido2?: string | null;
-    dni: string;
+    dni?: string | null;
     email?: string | null;
     telefono?: string | null;
     fechaNacimiento?: Date | null;
@@ -27,12 +28,14 @@ export class RegistrarHermanoUseCase {
     constructor(private readonly hermanoRepository: HermanoRepository) { }
 
     async execute(input: RegistrarHermanoInput): Promise<Hermano> {
-        // 1. Validar que el DNI no esté duplicado
-        const dniVO = DNI.create(input.dni);
-        const existente = await this.hermanoRepository.findByDni(dniVO);
-
-        if (existente) {
-            throw new Error(`Ya existe un hermano con el DNI ${input.dni}`);
+        // 1. Validar que el DNI no esté duplicado (si se proporciona)
+        let dniVO: DNI | null = null;
+        if (input.dni) {
+            dniVO = DNI.create(input.dni);
+            const existente = await this.hermanoRepository.findByDni(dniVO);
+            if (existente) {
+                throw new Error(`Ya existe un hermano con el DNI ${input.dni}`);
+            }
         }
 
         // 2. Validar email si se proporciona
@@ -64,7 +67,8 @@ export class RegistrarHermanoUseCase {
                 created_at: new Date(),
                 updated_at: new Date(),
                 version: 1,
-            }
+            },
+            input.apodo?.trim() ?? null
         );
 
         // 5. Persistir

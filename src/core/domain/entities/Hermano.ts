@@ -32,7 +32,7 @@ export class Hermano {
         public readonly nombre: string,
         public readonly apellido1: string,
         public readonly apellido2: string | null,
-        public readonly dni: DNI,
+        public readonly dni: DNI | null,
         public readonly email: Email | null,
         public readonly telefono: string | null,
         public readonly fechaNacimiento: Date | null,
@@ -40,7 +40,8 @@ export class Hermano {
         public readonly estado: EstadoHermano,
         public readonly cuotasAlDia: boolean,
         public readonly consentimientos: ConsentimientosRGPD,
-        public readonly auditoria: AuditoriaFields
+        public readonly auditoria: AuditoriaFields,
+        public readonly apodo: string | null = null
     ) { }
 
     getNombreCompleto(): string {
@@ -64,17 +65,17 @@ export class Hermano {
     /**
      * Crea una copia del hermano con campos actualizados
      */
-    update(updates: Partial<Omit<Hermano, 'id' | 'numeroHermano' | 'dni' | 'auditoria'>>): Hermano {
+    update(updates: Partial<Omit<Hermano, 'id' | 'numeroHermano' | 'auditoria'>>): Hermano {
         return new Hermano(
             this.id,
             this.numeroHermano,
             updates.nombre ?? this.nombre,
             updates.apellido1 ?? this.apellido1,
-            updates.apellido2 ?? this.apellido2,
-            this.dni,
-            updates.email ?? this.email,
-            updates.telefono ?? this.telefono,
-            updates.fechaNacimiento ?? this.fechaNacimiento,
+            updates.apellido2 !== undefined ? updates.apellido2 : this.apellido2,
+            updates.dni !== undefined ? updates.dni : this.dni,
+            updates.email !== undefined ? updates.email : this.email,
+            updates.telefono !== undefined ? updates.telefono : this.telefono,
+            updates.fechaNacimiento !== undefined ? updates.fechaNacimiento : this.fechaNacimiento,
             updates.fechaAlta ?? this.fechaAlta,
             updates.estado ?? this.estado,
             updates.cuotasAlDia ?? this.cuotasAlDia,
@@ -83,7 +84,8 @@ export class Hermano {
                 ...this.auditoria,
                 updated_at: new Date(),
                 version: this.auditoria.version + 1,
-            }
+            },
+            updates.apodo !== undefined ? updates.apodo : this.apodo
         );
     }
 

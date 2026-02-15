@@ -39,11 +39,12 @@ export function HermanoForm({ hermano, onSuccess, onCancel }: HermanoFormProps) 
         defaultValues: hermano
             ? {
                 nombre: hermano.nombre,
+                apodo: (hermano as any).apodo ?? null,
                 apellido1: hermano.apellido1,
                 apellido2: hermano.apellido2 ?? null,
-                dni: hermano.dni.getValue(),
+                dni: hermano.dni?.getValue() ?? null,
                 email: hermano.email?.getValue() ?? null,
-                telefono: hermano.telefono ?? undefined, // Ensure undefined if null for input
+                telefono: hermano.telefono ?? undefined,
                 fechaNacimiento: hermano.fechaNacimiento ?? null,
                 fechaAlta: hermano.fechaAlta,
                 consentimientos: {
@@ -67,8 +68,6 @@ export function HermanoForm({ hermano, onSuccess, onCancel }: HermanoFormProps) 
             setIsSubmitting(true);
             setSubmitError(null);
 
-            // Adapt DTO for use case input
-            // The use case expects flat consentimientos structure, not nested
             const input = {
                 ...data,
                 consentimientoDatos: data.consentimientos.datos,
@@ -95,130 +94,136 @@ export function HermanoForm({ hermano, onSuccess, onCancel }: HermanoFormProps) 
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* Error general */}
             {submitError && (
-                <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg">
-                    <p className="font-semibold">Error al guardar</p>
-                    <p className="text-sm mt-1">{submitError}</p>
+                <div className="bg-destructive/10 border border-destructive text-destructive px-3 py-2 rounded-lg text-sm">
+                    <p className="font-semibold">Error al guardar: {submitError}</p>
                 </div>
             )}
 
-            {/* Datos Personales */}
-            <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Datos Personales</h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Datos Principales y contacto combinados en grid de 3 */}
+            <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3">
                     {/* Nombre */}
                     <div>
-                        <label htmlFor="nombre" className="block text-sm font-medium mb-1">
+                        <label htmlFor="nombre" className="block text-xs font-medium mb-1 text-muted-foreground">
                             Nombre <span className="text-red-500">*</span>
                         </label>
                         <input
                             {...register('nombre')}
                             id="nombre"
                             type="text"
-                            className="w-full px-3 py-2 border rounded-md bg-background"
+                            className="w-full px-2 py-1.5 border rounded-md bg-background text-sm"
                             placeholder="Juan"
                         />
                         {errors.nombre && (
-                            <p className="text-sm text-red-500 mt-1">{errors.nombre.message}</p>
+                            <p className="text-[10px] text-red-500 mt-0.5">{errors.nombre.message}</p>
+                        )}
+                    </div>
+
+                    {/* Apodo */}
+                    <div>
+                        <label htmlFor="apodo" className="block text-xs font-medium mb-1 text-muted-foreground">
+                            Apodo / Nombre Costalero
+                        </label>
+                        <input
+                            {...register('apodo')}
+                            id="apodo"
+                            type="text"
+                            className="w-full px-2 py-1.5 border rounded-md bg-background text-sm"
+                            placeholder="Juanito"
+                        />
+                        {errors.apodo && (
+                            <p className="text-[10px] text-red-500 mt-0.5">{errors.apodo.message}</p>
                         )}
                     </div>
 
                     {/* Apellido 1 */}
                     <div>
-                        <label htmlFor="apellido1" className="block text-sm font-medium mb-1">
+                        <label htmlFor="apellido1" className="block text-xs font-medium mb-1 text-muted-foreground">
                             Primer Apellido <span className="text-red-500">*</span>
                         </label>
                         <input
                             {...register('apellido1')}
                             id="apellido1"
                             type="text"
-                            className="w-full px-3 py-2 border rounded-md bg-background"
+                            className="w-full px-2 py-1.5 border rounded-md bg-background text-sm"
                             placeholder="García"
                         />
                         {errors.apellido1 && (
-                            <p className="text-sm text-red-500 mt-1">{errors.apellido1.message}</p>
+                            <p className="text-[10px] text-red-500 mt-0.5">{errors.apellido1.message}</p>
                         )}
                     </div>
 
                     {/* Apellido 2 */}
                     <div>
-                        <label htmlFor="apellido2" className="block text-sm font-medium mb-1">
+                        <label htmlFor="apellido2" className="block text-xs font-medium mb-1 text-muted-foreground">
                             Segundo Apellido
                         </label>
                         <input
                             {...register('apellido2')}
                             id="apellido2"
                             type="text"
-                            className="w-full px-3 py-2 border rounded-md bg-background"
+                            className="w-full px-2 py-1.5 border rounded-md bg-background text-sm"
                             placeholder="López"
                         />
                         {errors.apellido2 && (
-                            <p className="text-sm text-red-500 mt-1">{errors.apellido2.message}</p>
+                            <p className="text-[10px] text-red-500 mt-0.5">{errors.apellido2.message}</p>
                         )}
                     </div>
 
                     {/* DNI */}
                     <div>
-                        <label htmlFor="dni" className="block text-sm font-medium mb-1">
-                            DNI <span className="text-red-500">*</span>
+                        <label htmlFor="dni" className="block text-xs font-medium mb-1 text-muted-foreground">
+                            DNI
                         </label>
                         <input
                             {...register('dni')}
                             id="dni"
                             type="text"
                             disabled={isEditing}
-                            className="w-full px-3 py-2 border rounded-md bg-background disabled:opacity-50"
+                            className="w-full px-2 py-1.5 border rounded-md bg-background text-sm disabled:opacity-50"
                             placeholder="12345678A"
                         />
-                        {errors.dni && <p className="text-sm text-red-500 mt-1">{errors.dni.message}</p>}
-                        {isEditing && <p className="text-xs text-muted-foreground mt-1">El DNI no puede modificarse</p>}
+                        {errors.dni && <p className="text-[10px] text-red-500 mt-0.5">{errors.dni.message}</p>}
                     </div>
-                </div>
-            </div>
 
-            {/* Información de Contacto */}
-            <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Información de Contacto</h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Email */}
                     <div>
-                        <label htmlFor="email" className="block text-sm font-medium mb-1">
+                        <label htmlFor="email" className="block text-xs font-medium mb-1 text-muted-foreground">
                             Email
                         </label>
                         <input
                             {...register('email')}
                             id="email"
                             type="email"
-                            className="w-full px-3 py-2 border rounded-md bg-background"
-                            placeholder="juan.garcia@example.com"
+                            className="w-full px-2 py-1.5 border rounded-md bg-background text-sm"
+                            placeholder="juan@example.com"
                         />
-                        {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>}
+                        {errors.email && <p className="text-[10px] text-red-500 mt-0.5">{errors.email.message}</p>}
                     </div>
 
                     {/* Teléfono */}
                     <div>
-                        <label htmlFor="telefono" className="block text-sm font-medium mb-1">
+                        <label htmlFor="telefono" className="block text-xs font-medium mb-1 text-muted-foreground">
                             Teléfono
                         </label>
                         <input
                             {...register('telefono')}
                             id="telefono"
                             type="tel"
-                            className="w-full px-3 py-2 border rounded-md bg-background"
-                            placeholder="666 123 456"
+                            className="w-full px-2 py-1.5 border rounded-md bg-background text-sm"
+                            placeholder="600000000"
                         />
                         {errors.telefono && (
-                            <p className="text-sm text-red-500 mt-1">{errors.telefono.message}</p>
+                            <p className="text-[10px] text-red-500 mt-0.5">{errors.telefono.message}</p>
                         )}
                     </div>
 
                     {/* Fecha Nacimiento */}
                     <div>
-                        <label htmlFor="fechaNacimiento" className="block text-sm font-medium mb-1">
+                        <label htmlFor="fechaNacimiento" className="block text-xs font-medium mb-1 text-muted-foreground">
                             Fecha de Nacimiento
                         </label>
                         <input
@@ -227,16 +232,16 @@ export function HermanoForm({ hermano, onSuccess, onCancel }: HermanoFormProps) 
                             })}
                             id="fechaNacimiento"
                             type="date"
-                            className="w-full px-3 py-2 border rounded-md bg-background"
+                            className="w-full px-2 py-1.5 border rounded-md bg-background text-sm"
                         />
                         {errors.fechaNacimiento && (
-                            <p className="text-sm text-red-500 mt-1">{errors.fechaNacimiento.message}</p>
+                            <p className="text-[10px] text-red-500 mt-0.5">{errors.fechaNacimiento.message}</p>
                         )}
                     </div>
 
                     {/* Fecha Alta */}
                     <div>
-                        <label htmlFor="fechaAlta" className="block text-sm font-medium mb-1">
+                        <label htmlFor="fechaAlta" className="block text-xs font-medium mb-1 text-muted-foreground">
                             Fecha de Alta <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -245,95 +250,65 @@ export function HermanoForm({ hermano, onSuccess, onCancel }: HermanoFormProps) 
                             })}
                             id="fechaAlta"
                             type="date"
-                            className="w-full px-3 py-2 border rounded-md bg-background"
+                            className="w-full px-2 py-1.5 border rounded-md bg-background text-sm"
                         />
                         {errors.fechaAlta && (
-                            <p className="text-sm text-red-500 mt-1">{errors.fechaAlta.message}</p>
+                            <p className="text-[10px] text-red-500 mt-0.5">{errors.fechaAlta.message}</p>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* Consentimientos RGPD */}
-            <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Consentimientos RGPD</h3>
-
-                <div className="space-y-3">
-                    {/* Consentimiento Datos */}
-                    <div className="flex items-start gap-2">
-                        <input
-                            {...register('consentimientos.datos')}
-                            id="consentimientoDatos"
-                            type="checkbox"
-                            className="mt-1"
-                        />
-                        <label htmlFor="consentimientoDatos" className="text-sm">
-                            <span className="font-medium">Tratamiento de datos personales</span>{' '}
-                            <span className="text-red-500">*</span>
-                            <br />
-                            <span className="text-muted-foreground">
-                                Acepto el tratamiento de mis datos personales según la política de privacidad
-                            </span>
-                        </label>
+            {/* Consentimientos RGPD mas compactos */}
+            <div className="pt-2 border-t">
+                {errors.consentimientos && (
+                    <p className="text-[10px] text-red-500 mb-2">Debe aceptar los términos obligatorios</p>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                            <input {...register('consentimientos.datos')} id="cDatos" type="checkbox" className="h-3 w-3" />
+                            <label htmlFor="cDatos" className="text-[11px] leading-tight">
+                                Datos Personales <span className="text-red-500">*</span>
+                            </label>
+                        </div>
+                        {errors.consentimientos?.datos && (
+                            <p className="text-[10px] text-red-500">{errors.consentimientos.datos.message}</p>
+                        )}
                     </div>
-                    {errors.consentimientos?.datos && (
-                        <p className="text-sm text-red-500">{errors.consentimientos.datos.message}</p>
-                    )}
-
-                    {/* Consentimiento Imágenes */}
-                    <div className="flex items-start gap-2">
-                        <input
-                            {...register('consentimientos.imagenes')}
-                            id="consentimientoImagenes"
-                            type="checkbox"
-                            className="mt-1"
-                        />
-                        <label htmlFor="consentimientoImagenes" className="text-sm">
-                            <span className="font-medium">Uso de imágenes</span>
-                            <br />
-                            <span className="text-muted-foreground">
-                                Autorizo el uso de mi imagen en actividades de la hermandad
-                            </span>
-                        </label>
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                            <input {...register('consentimientos.imagenes')} id="cImg" type="checkbox" className="h-3 w-3" />
+                            <label htmlFor="cImg" className="text-[11px] leading-tight">Uso de Imágenes</label>
+                        </div>
                     </div>
-
-                    {/* Consentimiento Comunicaciones */}
-                    <div className="flex items-start gap-2">
-                        <input
-                            {...register('consentimientos.comunicaciones')}
-                            id="consentimientoComunicaciones"
-                            type="checkbox"
-                            className="mt-1"
-                        />
-                        <label htmlFor="consentimientoComunicaciones" className="text-sm">
-                            <span className="font-medium">Comunicaciones</span>
-                            <br />
-                            <span className="text-muted-foreground">
-                                Acepto recibir comunicaciones sobre eventos y actividades
-                            </span>
-                        </label>
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                            <input {...register('consentimientos.comunicaciones')} id="cCom" type="checkbox" className="h-3 w-3" />
+                            <label htmlFor="cCom" className="text-[11px] leading-tight">Comunicaciones</label>
+                        </div>
                     </div>
                 </div>
             </div>
 
             {/* Botones */}
-            <div className="flex gap-3 justify-end pt-4 border-t">
+            <div className="flex gap-2 justify-end pt-3 border-t">
                 <button
                     type="button"
                     onClick={onCancel}
-                    disabled={isSubmitting}
-                    className="px-4 py-2 border rounded-lg hover:bg-muted transition-colors disabled:opacity-50"
+                    className="px-3 py-1.5 text-xs border rounded hover:bg-muted transition-colors"
                 >
                     Cancelar
                 </button>
                 <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    className="px-3 py-1.5 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
                 >
-                    {isSubmitting ? 'Guardando...' : isEditing ? 'Actualizar' : 'Crear Hermano'}
+                    {isSubmitting ? '...' : isEditing ? 'Guardar' : 'Crear'}
                 </button>
             </div>
         </form>
+
     );
 }

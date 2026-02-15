@@ -91,7 +91,7 @@ export function HermanosList() {
                                     >
                                         <td className="px-4 py-3">{hermano.numeroHermano}</td>
                                         <td className="px-4 py-3">{hermano.getNombreCompleto()}</td>
-                                        <td className="px-4 py-3 font-mono text-sm">{hermano.dni.getValue()}</td>
+                                        <td className="px-4 py-3 font-mono text-sm">{hermano.dni?.getValue() || 'SIN DNI'}</td>
                                         <td className="px-4 py-3 text-sm">{antiguedad.toString()}</td>
                                         <td className="px-4 py-3">
                                             <span

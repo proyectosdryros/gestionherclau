@@ -153,6 +153,9 @@ export function HermanoDetailClient({ id }: HermanoDetailClientProps) {
                         </h1>
                         <p className="text-sm text-gray-500">
                             Nº Hermano: <span className="font-mono font-medium">{hermano.numeroHermano}</span>
+                            {hermano.apodo && (
+                                <span className="ml-2 text-primary font-medium">({hermano.apodo})</span>
+                            )}
                         </p>
                     </div>
                 </div>
@@ -192,7 +195,7 @@ export function HermanoDetailClient({ id }: HermanoDetailClientProps) {
                         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <h4 className="text-sm font-medium text-gray-500">DNI</h4>
-                                <p className="mt-1">{hermano.dni.toString()}</p>
+                                <p className="mt-1">{hermano.dni?.toString() || 'Sin DNI'}</p>
                             </div>
                             <div>
                                 <h4 className="text-sm font-medium text-gray-500">Email</h4>

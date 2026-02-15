@@ -4,6 +4,7 @@
  */
 
 import { Hermano } from '@/core/domain/entities/Hermano';
+import { DNI } from '@/core/domain/value-objects/DNI';
 import { Email } from '@/core/domain/value-objects/Email';
 import { HermanoRepository } from '@/core/ports/repositories/HermanoRepository';
 import type { EstadoHermano } from '@/core/domain/entities/Hermano';
@@ -11,8 +12,10 @@ import type { EstadoHermano } from '@/core/domain/entities/Hermano';
 export interface ActualizarHermanoInput {
     id: string;
     nombre?: string;
+    apodo?: string | null;
     apellido1?: string;
     apellido2?: string | null;
+    dni?: string | null;
     email?: string | null;
     telefono?: string | null;
     fechaNacimiento?: Date | null;
@@ -41,16 +44,28 @@ export class ActualizarHermanoUseCase {
             ? input.email ? Email.create(input.email) : null
             : hermano.email;
 
-        // 3. Preparar actualizaciones
-        type MutableHermano = {
-            -readonly [P in keyof Hermano]: Hermano[P];
-        };
-        const updates: Partial<MutableHermano> = {};
+        // 3. Validar DNI si se actualiza
+        let dniVO = hermano.dni;
+        if (input.dni !== undefined) {
+            dniVO = input.dni ? DNI.create(input.dni) : null;
+            // Solo validar duplicados si está cambiando el DNI por uno NO nulo
+            if (dniVO && (!hermano.dni || !dniVO.equals(hermano.dni))) {
+                const existente = await this.hermanoRepository.findByDni(dniVO);
+                if (existente) {
+                    throw new Error(`Ya existe un hermano con el DNI ${input.dni}`);
+                }
+            }
+        }
+
+        // 4. Preparar actualizaciones
+        const updates: any = {};
 
         if (input.nombre !== undefined) updates.nombre = input.nombre.trim();
+        if (input.apodo !== undefined) updates.apodo = input.apodo?.trim() ?? null;
         if (input.apellido1 !== undefined) updates.apellido1 = input.apellido1.trim();
         if (input.apellido2 !== undefined) updates.apellido2 = input.apellido2?.trim() ?? null;
-        if (emailVO !== hermano.email) updates.email = emailVO;
+        if (input.dni !== undefined) updates.dni = dniVO;
+        if (input.email !== undefined) updates.email = emailVO;
         if (input.telefono !== undefined) updates.telefono = input.telefono;
         if (input.fechaNacimiento !== undefined) updates.fechaNacimiento = input.fechaNacimiento;
         if (input.estado !== undefined) updates.estado = input.estado;

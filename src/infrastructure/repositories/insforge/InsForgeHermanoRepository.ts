@@ -1,13 +1,13 @@
 
 import { HermanoRepository } from '@/core/ports/repositories/HermanoRepository';
-import { Hermano, EstadoHermano, TipoVia, Provincia } from '@/core/domain/entities/Hermano';
+import { Hermano, EstadoHermano } from '@/core/domain/entities/Hermano';
 import { DNI } from '@/core/domain/value-objects/DNI';
 import { Email } from '@/core/domain/value-objects/Email';
 import { insforge } from '@/lib/insforge';
 
 export class InsForgeHermanoRepository implements HermanoRepository {
     async findById(id: string): Promise<Hermano | null> {
-        const { data, error } = await insforge
+        const { data, error } = await insforge.database
             .from('hermanos')
             .select('*')
             .eq('id', id)
@@ -22,25 +22,21 @@ export class InsForgeHermanoRepository implements HermanoRepository {
     }
 
     async findByDni(dni: DNI): Promise<Hermano | null> {
-        const { data, error } = await insforge
+        const { data, error } = await insforge.database
             .from('hermanos')
             .select('*')
             .eq('dni', dni.toString())
             .single();
 
-        if (error) {
-            // PostgREST returns error on no rows, check logic if needed
-            return null;
-        }
-
+        if (error) return null;
         return data ? this.mapToDomain(data) : null;
     }
 
     async findByNumero(numero: number): Promise<Hermano | null> {
-        const { data, error } = await insforge
+        const { data, error } = await insforge.database
             .from('hermanos')
             .select('*')
-            .eq('numero_hermano', numero)
+            .eq('numeroHermano', numero)
             .single();
 
         if (error) return null;
@@ -48,18 +44,19 @@ export class InsForgeHermanoRepository implements HermanoRepository {
     }
 
     async findAll(filters?: { estado?: string; cuotasAlDia?: boolean; search?: string }): Promise<Hermano[]> {
-        let query = insforge.from('hermanos').select('*');
+        let query = insforge.database.from('hermanos').select('*');
 
         if (filters?.estado) {
             query = query.eq('estado', filters.estado);
         }
 
         if (filters?.cuotasAlDia !== undefined) {
-            query = query.eq('cuotas_al_dia', filters.cuotasAlDia);
+            query = query.eq('cuotasAlDia', filters.cuotasAlDia);
         }
 
         if (filters?.search) {
-            query = query.or(`nombre.ilike.%${filters.search}%,apellido1.ilike.%${filters.search}%,dni.ilike.%${filters.search}%`);
+            // Using PostgREST or syntax for searching multiple fields
+            query = query.or(`nombre.ilike.%${filters.search}%,apellido1.ilike.%${filters.search}%,dni.ilike.%${filters.search}%,apodo.ilike.%${filters.search}%`);
         }
 
         const { data, error } = await query;
@@ -69,23 +66,23 @@ export class InsForgeHermanoRepository implements HermanoRepository {
             return [];
         }
 
-        return data.map(this.mapToDomain);
+        return data.map((d: any) => this.mapToDomain(d));
     }
 
     async findElegibles(): Promise<Hermano[]> {
-        const { data, error } = await insforge
+        const { data, error } = await insforge.database
             .from('hermanos')
             .select('*')
             .eq('estado', 'ACTIVO')
-            .eq('cuotas_al_dia', true);
+            .eq('cuotasAlDia', true);
 
         if (error) return [];
-        return data.map(this.mapToDomain);
+        return data.map((d: any) => this.mapToDomain(d));
     }
 
     async create(hermano: Hermano): Promise<Hermano> {
         const persistenceData = this.mapToPersistence(hermano);
-        const { data, error } = await insforge
+        const { data, error } = await insforge.database
             .from('hermanos')
             .insert([persistenceData])
             .select()
@@ -100,7 +97,7 @@ export class InsForgeHermanoRepository implements HermanoRepository {
 
     async update(hermano: Hermano): Promise<Hermano> {
         const persistenceData = this.mapToPersistence(hermano);
-        const { data, error } = await insforge
+        const { data, error } = await insforge.database
             .from('hermanos')
             .update(persistenceData)
             .eq('id', hermano.id)
@@ -115,11 +112,9 @@ export class InsForgeHermanoRepository implements HermanoRepository {
     }
 
     async delete(id: string): Promise<void> {
-        // Soft delete logic to set state to BAJA_VOLUNTARIA or similar, 
-        // or hard delete depending on requirement. Repository says soft delete.
-        const { error } = await insforge
+        const { error } = await insforge.database
             .from('hermanos')
-            .update({ estado: 'BAJA_VOLUNTARIA' })
+            .delete()
             .eq('id', id);
 
         if (error) {
@@ -128,21 +123,19 @@ export class InsForgeHermanoRepository implements HermanoRepository {
     }
 
     async getNextNumeroHermano(): Promise<number> {
-        // This logic needs to be robust, possibly a stored procedure or separate table to track sequences
-        // For now using simple max + 1
-        const { data, error } = await insforge
+        const { data, error } = await insforge.database
             .from('hermanos')
-            .select('numero_hermano')
-            .order('numero_hermano', { ascending: false })
+            .select('numeroHermano')
+            .order('numeroHermano', { ascending: false })
             .limit(1)
             .single();
 
         if (error || !data) return 1;
-        return (data.numero_hermano || 0) + 1;
+        return (data.numeroHermano || 0) + 1;
     }
 
     async count(filters?: { estado?: string }): Promise<number> {
-        let query = insforge.from('hermanos').select('*', { count: 'exact', head: true });
+        let query = insforge.database.from('hermanos').select('*', { count: 'exact', head: true });
 
         if (filters?.estado) {
             query = query.eq('estado', filters.estado);
@@ -158,62 +151,52 @@ export class InsForgeHermanoRepository implements HermanoRepository {
     private mapToDomain(data: any): Hermano {
         return new Hermano(
             data.id,
-            data.numero_hermano,
+            data.numeroHermano,
             data.nombre,
             data.apellido1,
             data.apellido2,
-            new DNI(data.dni),
-            data.fecha_nacimiento ? new Date(data.fecha_nacimiento) : undefined,
-            data.direccion ? {
-                tipoVia: data.direccion.tipoVia as TipoVia,
-                nombreVia: data.direccion.nombreVia,
-                numero: data.direccion.numero,
-                piso: data.direccion.piso,
-                puerta: data.direccion.puerta,
-                codigoPostal: data.direccion.codigoPostal,
-                municipio: data.direccion.municipio,
-                provincia: data.direccion.provincia as Provincia
-            } : undefined,
+            data.dni ? DNI.create(data.dni) : null,
+            data.email ? Email.create(data.email) : null,
             data.telefono,
-            data.email ? new Email(data.email) : undefined,
-            new Date(data.fecha_alta),
+            data.fechaNacimiento ? new Date(data.fechaNacimiento) : null,
+            new Date(data.fechaAlta),
             data.estado as EstadoHermano,
-            data.cuenta_bancaria,
-            data.cuotas_al_dia,
+            data.cuotasAlDia,
             data.consentimientos || {
                 datos: false,
                 imagenes: false,
                 comunicaciones: false
             },
-            data.forma_pago,
             {
-                created_at: new Date(data.created_at),
-                updated_at: new Date(data.updated_at),
-                version: data.version
-            }
+                created_at: new Date(data.auditoria.created_at),
+                updated_at: new Date(data.auditoria.updated_at),
+                version: data.auditoria.version
+            },
+            data.apodo
         );
     }
 
     private mapToPersistence(hermano: Hermano): any {
         return {
             id: hermano.id,
-            numero_hermano: hermano.numeroHermano,
-            nombre: hermano.getNombre(),
-            apellido1: hermano.getApellido1(),
-            apellido2: hermano.getApellido2(),
-            dni: hermano.dni.toString(),
-            fecha_nacimiento: hermano.fechaNacimiento?.toISOString(),
-            direccion: hermano.direccion, // Assuming JSONB or similar structure in DB
+            numeroHermano: hermano.numeroHermano,
+            nombre: hermano.nombre,
+            apodo: hermano.apodo,
+            apellido1: hermano.apellido1,
+            apellido2: hermano.apellido2,
+            dni: hermano.dni?.toString() ?? null,
+            email: hermano.email?.toString() ?? null,
             telefono: hermano.telefono,
-            email: hermano.email?.toString(),
-            fecha_alta: hermano.fechaAlta.toISOString(),
+            fechaNacimiento: hermano.fechaNacimiento?.toISOString() ?? null,
+            fechaAlta: hermano.fechaAlta.toISOString(),
             estado: hermano.estado,
-            cuenta_bancaria: hermano.cuentaBancaria,
-            cuotas_al_dia: hermano.cuotasAlDia,
+            cuotasAlDia: hermano.cuotasAlDia,
             consentimientos: hermano.consentimientos,
-            forma_pago: hermano.formaPago,
-            version: hermano.auditoria.version,
-            // created_at/updated_at handled by DB defaults/triggers usually, or pass them if needed
+            auditoria: {
+                ...hermano.auditoria,
+                created_at: hermano.auditoria.created_at.toISOString(),
+                updated_at: hermano.auditoria.updated_at.toISOString()
+            }
         };
     }
 }
