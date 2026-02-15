@@ -1,0 +1,2 @@
+// Repository interfaces (ports)
+export { };
