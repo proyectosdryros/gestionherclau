@@ -135,14 +135,51 @@ export class DexieHermanoRepository implements HermanoRepository {
             version: 1,
         };
 
-        await db.hermanos.add(dto);
+        await db.transaction('rw', [db.hermanos, db.syncQueue], async () => {
+            await db.hermanos.add(dto);
+            await db.syncQueue.add({
+                id: uuidv7(),
+                entityType: 'hermano',
+                entityId: dto.id,
+                operation: 'CREATE',
+                payload: JSON.stringify(dto),
+                localTimestamp: Date.now(),
+                serverTimestamp: null,
+                attempts: 0,
+                priority: 'normal',
+                status: 'pending',
+                nextRetryAt: null,
+            });
+        });
+
         return dtoToEntity(dto);
     }
 
     async update(hermano: Hermano): Promise<Hermano> {
         const dto = entityToDto(hermano);
-        await db.hermanos.put(dto);
-        return hermano;
+
+        // Actualizar auditoría
+        dto.auditoria.updated_at = new Date();
+        dto.auditoria.version++;
+
+        await db.transaction('rw', [db.hermanos, db.syncQueue], async () => {
+            await db.hermanos.put(dto);
+            await db.syncQueue.add({
+                id: uuidv7(),
+                entityType: 'hermano',
+                entityId: dto.id,
+                operation: 'UPDATE',
+                payload: JSON.stringify(dto),
+                localTimestamp: Date.now(),
+                serverTimestamp: null,
+                attempts: 0,
+                priority: 'normal',
+                status: 'pending',
+                nextRetryAt: null,
+            });
+        });
+
+        return dtoToEntity(dto);
     }
 
     async delete(id: string): Promise<void> {

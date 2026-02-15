@@ -3,6 +3,7 @@ import { MeritoRepository } from '@/core/ports/repositories/MeritoRepository';
 import { Merito } from '@/core/domain/entities/Merito';
 import { db } from './db';
 import type { MeritoDTO } from '@/lib/validations/hermano.schemas';
+import { v7 as uuidv7 } from 'uuid';
 
 function dtoToEntity(dto: MeritoDTO): Merito {
     return new Merito(
@@ -48,8 +49,29 @@ export class DexieMeritoRepository implements MeritoRepository {
 
     async create(merito: Merito): Promise<Merito> {
         const dto = entityToDto(merito);
-        await db.meritos.add(dto);
-        return merito;
+
+        if (!dto.id) {
+            dto.id = uuidv7();
+        }
+
+        await db.transaction('rw', [db.meritos, db.syncQueue], async () => {
+            await db.meritos.add(dto);
+            await db.syncQueue.add({
+                id: uuidv7(),
+                entityType: 'merito',
+                entityId: dto.id,
+                operation: 'CREATE',
+                payload: JSON.stringify(dto),
+                localTimestamp: Date.now(),
+                serverTimestamp: null,
+                attempts: 0,
+                priority: 'normal',
+                status: 'pending',
+                nextRetryAt: null,
+            });
+        });
+
+        return dtoToEntity(dto);
     }
 
     async update(merito: Merito): Promise<Merito> {
@@ -59,6 +81,21 @@ export class DexieMeritoRepository implements MeritoRepository {
     }
 
     async delete(id: string): Promise<void> {
-        await db.meritos.delete(id);
+        await db.transaction('rw', [db.meritos, db.syncQueue], async () => {
+            await db.meritos.delete(id);
+            await db.syncQueue.add({
+                id: uuidv7(),
+                entityType: 'merito',
+                entityId: id,
+                operation: 'DELETE',
+                payload: '',
+                localTimestamp: Date.now(),
+                serverTimestamp: null,
+                attempts: 0,
+                priority: 'normal',
+                status: 'pending',
+                nextRetryAt: null,
+            });
+        });
     }
 }
