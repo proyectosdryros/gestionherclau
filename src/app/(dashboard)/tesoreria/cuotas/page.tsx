@@ -10,7 +10,7 @@ import { Badge } from '@/presentation/components/ui/Badge';
 import { Search, ChevronLeft, CreditCard, User, Calendar, Loader2 } from 'lucide-react';
 import { CuotasGrid } from '@/presentation/components/tesoreria/CuotasGrid';
 import { Modal } from '@/presentation/components/ui/Modal';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import Link from 'next/link';
 
 import { usePrecios } from '@/presentation/hooks/usePrecios';
