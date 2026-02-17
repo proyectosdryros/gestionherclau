@@ -93,7 +93,7 @@ export class SyncEngine {
                 console.log(`[SyncEngine] Applying ${remoteChanges.length} remote changes for ${table}...`);
 
                 // Update local DB
-                const dexieTable = this.getDexieTable(type);
+                const dexieTable = this.getDexieTable(type) as any;
                 await dexieTable.bulkPut(remoteChanges);
 
                 // Track the most recent updated_at

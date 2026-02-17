@@ -33,19 +33,34 @@ export class InsForgeSyncRepository implements SyncRepository {
     }
 
     async pull(table: string, lastSyncTimestamp: string | null): Promise<any[]> {
+        console.log(`[SyncRepository] Pulling from ${table} with lastSync:`, lastSyncTimestamp);
         let query = insforge.database.from(table).select('*');
 
-        if (lastSyncTimestamp) {
+        // Ensure we only filter if we have a valid-looking timestamp string
+        if (lastSyncTimestamp && lastSyncTimestamp.trim() !== '' && lastSyncTimestamp !== 'null') {
             query = query.gt('updated_at', lastSyncTimestamp);
         }
 
-        const { data, error } = await query.order('updated_at', { ascending: true });
+        try {
+            const { data, error } = await query.order('updated_at', { ascending: true });
 
-        if (error) {
-            console.error(`Error pulling from ${table}:`, error);
-            throw new Error(`Sync Pull Error (${table}): ${error.message}`);
+            if (error) {
+                // Log with more detail in case it's a PostgrestError or similar
+                const errorInfo = {
+                    message: error.message || (typeof error === 'string' ? error : 'No message'),
+                    details: error.details,
+                    code: error.code,
+                    hint: error.hint,
+                    stack: (error as any).stack
+                };
+                console.error(`[SyncRepository] Error pulling from ${table}:`, errorInfo);
+                throw new Error(`Sync Pull Error (${table}): ${errorInfo.message}`);
+            }
+
+            return data || [];
+        } catch (err: any) {
+            console.error(`[SyncRepository] CRASH pulling from ${table}:`, err);
+            throw new Error(`Sync Pull Crash (${table}): ${err.message || 'Unknown crash'}`);
         }
-
-        return data || [];
     }
 }

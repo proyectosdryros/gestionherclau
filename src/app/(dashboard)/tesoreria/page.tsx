@@ -3,6 +3,7 @@
 
 import React, { useState } from 'react';
 import { useRecibos } from '@/presentation/hooks/useRecibos';
+import { useHermanos } from '@/presentation/hooks/useHermanos';
 import { Card, CardHeader, CardTitle, CardContent } from '@/presentation/components/ui/Card';
 import { Button } from '@/presentation/components/ui/Button';
 import { Input } from '@/presentation/components/ui/Input';
@@ -10,12 +11,26 @@ import { Badge } from '@/presentation/components/ui/Badge';
 import { Search, Plus, Filter, Wallet, MoreVertical, CreditCard } from 'lucide-react';
 import { Modal } from '@/presentation/components/ui/Modal';
 import { formatCurrency } from '@/lib/utils';
+import { TipoRecibo } from '@/core/domain/entities/Recibo';
 
 export default function TesoreriaPage() {
-    const { recibos, loading, error, registrarCobro } = useRecibos();
+    const { recibos, loading, error, registrarCobro, crearRecibo } = useRecibos();
+    const { hermanos } = useHermanos(); // Load brothers for selection
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Payment Modal State
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [selectedReciboId, setSelectedReciboId] = useState<string | null>(null);
+
+    // Create Modal State
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [newRecibo, setNewRecibo] = useState({
+        hermanoId: '',
+        concepto: '',
+        importe: '',
+        tipo: 'CUOTA_ORDINARIA' as TipoRecibo,
+        fechaVencimiento: ''
+    });
 
     const filteredRecibos = recibos.filter(r =>
         r.concepto.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -33,10 +48,41 @@ export default function TesoreriaPage() {
             await registrarCobro(selectedReciboId, 'EFECTIVO');
             setIsPaymentModalOpen(false);
             setSelectedReciboId(null);
-            alert('Cobro registrado correctamente');
+            // alert('Cobro registrado correctamente'); // Removed to avoid blocking UI
         } catch (err) {
             alert('Error al registrar el cobro');
         }
+    };
+
+    const handleCreateRecibo = async () => {
+        if (!newRecibo.hermanoId || !newRecibo.concepto || !newRecibo.importe) {
+            alert('Por favor rellena todos los campos obligatorios');
+            return;
+        }
+
+        try {
+            await crearRecibo({
+                hermanoId: newRecibo.hermanoId,
+                concepto: newRecibo.concepto,
+                importe: parseFloat(newRecibo.importe),
+                estado: 'PENDIENTE',
+                tipo: newRecibo.tipo,
+                fechaEmision: new Date(),
+                fechaVencimiento: newRecibo.fechaVencimiento ? new Date(newRecibo.fechaVencimiento) : undefined,
+                observaciones: ''
+            });
+            setIsCreateModalOpen(false);
+            setNewRecibo({ hermanoId: '', concepto: '', importe: '', tipo: 'CUOTA_ORDINARIA', fechaVencimiento: '' });
+        } catch (err) {
+            console.error(err);
+            alert('Error al crear el recibo');
+        }
+    };
+
+    // Helper to find brother name
+    const getHermanoName = (id: string) => {
+        const h = hermanos.find(h => h.id === id);
+        return h ? `${h.nombre} ${h.apellido1}` : id;
     };
 
     return (
@@ -46,9 +92,19 @@ export default function TesoreriaPage() {
                     <h1 className="text-3xl font-bold tracking-tight">Tesorería</h1>
                     <p className="text-muted-foreground">Gestión de recibos, cuotas y cobros manuales.</p>
                 </div>
-                <Button className="gap-2">
-                    <Plus className="w-4 h-4" /> Nuevo Recibo
-                </Button>
+                <div className="flex gap-2">
+                    <Button variant="secondary" onClick={() => window.location.href = '/tesoreria/precios'}>
+                        <Wallet className="w-4 h-4 mr-2" />
+                        Gestionar Precios
+                    </Button>
+                    <Button variant="outline" onClick={() => window.location.href = '/tesoreria/cuotas'} className="border-indigo-500/50 text-indigo-400 hover:bg-indigo-500/10">
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Pago de Cuotas
+                    </Button>
+                    <Button className="gap-2" onClick={() => setIsCreateModalOpen(true)}>
+                        <Plus className="w-4 h-4" /> Nuevo Recibo
+                    </Button>
+                </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -114,7 +170,7 @@ export default function TesoreriaPage() {
                                 ) : (
                                     filteredRecibos.map((recibo) => (
                                         <tr key={recibo.id} className="hover:bg-muted/40 transition-colors">
-                                            <td className="p-4 font-mono text-xs">{recibo.hermanoId}</td>
+                                            <td className="p-4 font-mono text-xs">{getHermanoName(recibo.hermanoId)}</td>
                                             <td className="p-4">{recibo.concepto}</td>
                                             <td className="p-4 font-medium">{formatCurrency(recibo.importe)}</td>
                                             <td className="p-4">
@@ -159,6 +215,79 @@ export default function TesoreriaPage() {
                     <div className="flex justify-end gap-2">
                         <Button variant="outline" onClick={() => setIsPaymentModalOpen(false)}>Cancelar</Button>
                         <Button onClick={handleConfirmPayment}>Confirmar Cobro</Button>
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
+                title="Nuevo Recibo / Cuota"
+            >
+                <div className="space-y-4 pt-4 text-black">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Hermano</label>
+                        <select
+                            className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                            value={newRecibo.hermanoId}
+                            onChange={(e) => setNewRecibo({ ...newRecibo, hermanoId: e.target.value })}
+                        >
+                            <option value="">Seleccionar Hermano...</option>
+                            {hermanos.map(h => (
+                                <option key={h.id} value={h.id}>
+                                    {h.numeroHermano} - {h.nombre} {h.apellido1}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Concepto</label>
+                        <Input
+                            placeholder="Ej: Cuota 2024, Lotería Navidad..."
+                            value={newRecibo.concepto}
+                            onChange={(e) => setNewRecibo({ ...newRecibo, concepto: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Importe (€)</label>
+                            <Input
+                                type="number"
+                                placeholder="0.00"
+                                value={newRecibo.importe}
+                                onChange={(e) => setNewRecibo({ ...newRecibo, importe: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Tipo</label>
+                            <select
+                                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                value={newRecibo.tipo}
+                                onChange={(e) => setNewRecibo({ ...newRecibo, tipo: e.target.value as TipoRecibo })}
+                            >
+                                <option value="CUOTA_ORDINARIA">Cuota Ordinaria</option>
+                                <option value="CUOTA_EXTRAORDINARIA">Cuota Extra.</option>
+                                <option value="PAPELETA_SITIO">Papeleta Sitio</option>
+                                <option value="DONATIVO">Donativo</option>
+                                <option value="OTRO">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Vencimiento (Opcional)</label>
+                        <Input
+                            type="date"
+                            value={newRecibo.fechaVencimiento}
+                            onChange={(e) => setNewRecibo({ ...newRecibo, fechaVencimiento: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-4">
+                        <Button variant="outline" onClick={() => setIsCreateModalOpen(false)}>Cancelar</Button>
+                        <Button onClick={handleCreateRecibo}>Crear Recibo</Button>
                     </div>
                 </div>
             </Modal>

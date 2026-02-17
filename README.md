@@ -17,7 +17,7 @@ Sistema ERP offline-first para gestión integral de Hermandades y Cofradías de 
 
 Clean Architecture (Hexagonal) con 4 capas:
 
-```
+```text
 src/
 ├── app/              # UI Layer (Next.js App Router)
 ├── core/             # Domain Layer (framework-agnostic)

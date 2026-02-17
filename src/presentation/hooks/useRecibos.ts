@@ -1,16 +1,11 @@
 
-'use client';
-
 import { useState, useEffect, useCallback } from 'react';
 import { Recibo } from '@/core/domain/entities/Recibo';
-import { DexieReciboRepository } from '@/infrastructure/repositories/indexeddb/DexieReciboRepository';
-import { DexiePagoRepository } from '@/infrastructure/repositories/indexeddb/DexiePagoRepository';
-import { RegistrarCobroUseCase } from '@/core/use-cases/tesoreria/RegistrarCobroUseCase';
+import { InsForgeReciboRepository } from '@/infrastructure/repositories/insforge/InsForgeReciboRepository';
 import { MetodoPago } from '@/core/domain/entities/Pago';
 
-const reciboRepo = new DexieReciboRepository();
-const pagoRepo = new DexiePagoRepository();
-const registrarCobroUC = new RegistrarCobroUseCase(reciboRepo, pagoRepo);
+// Use Cloud Repository directly for now to ensure consistency
+const reciboRepo = new InsForgeReciboRepository();
 
 export function useRecibos() {
     const [recibos, setRecibos] = useState<Recibo[]>([]);
@@ -33,17 +28,46 @@ export function useRecibos() {
         refresh();
     }, [refresh]);
 
-    const registrarCobro = async (reciboId: string, metodo: MetodoPago) => {
+    const crearRecibo = async (recibo: Omit<Recibo, 'id' | 'auditoria' | 'cobrar' | 'anular' | 'update'>) => {
         try {
-            await registrarCobroUC.execute({
-                reciboId,
-                importe: recibos.find(r => r.id === reciboId)?.importe || 0,
-                metodoPago: metodo
-            });
+            setLoading(true);
+            await reciboRepo.create(recibo);
             await refresh();
         } catch (err) {
             console.error(err);
             throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const registrarCobro = async (reciboId: string, metodo: MetodoPago) => {
+        try {
+            const recibo = recibos.find(r => r.id === reciboId);
+            if (!recibo) throw new Error("Recibo no encontrado");
+
+            // Recibo is a class instance, use its method
+            recibo.cobrar();
+            // We update the entity via the repository
+            await reciboRepo.update(recibo);
+
+            await refresh();
+        } catch (err) {
+            console.error(err);
+            throw err;
+        }
+    };
+
+    const eliminarRecibo = async (reciboId: string) => {
+        try {
+            setLoading(true);
+            await reciboRepo.delete(reciboId);
+            await refresh();
+        } catch (err) {
+            console.error(err);
+            throw err;
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -52,6 +76,8 @@ export function useRecibos() {
         loading,
         error,
         refresh,
-        registrarCobro
+        registrarCobro,
+        crearRecibo,
+        eliminarRecibo
     };
 }

@@ -3,17 +3,31 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { insforge } from '@/lib/insforge';
 import { SyncButton } from '@/presentation/components/ui/SyncButton';
-import { Shield, Users, Wallet, ClipboardList, Package, LayoutDashboard } from 'lucide-react';
+import { Shield, Users, Wallet, ClipboardList, Package, LayoutDashboard, LogOut, Tag } from 'lucide-react';
 
 export function Navbar() {
+    const router = useRouter();
     const navLinks = [
         { href: '/dashboard', label: 'Inicio', icon: LayoutDashboard },
         { href: '/secretaria/hermanos', label: 'Secretaría', icon: Users },
         { href: '/tesoreria', label: 'Tesorería', icon: Wallet },
+        { href: '/tesoreria/precios', label: 'Precios', icon: Tag },
         { href: '/cofradia', label: 'Cofradía', icon: ClipboardList },
         { href: '/priostia', label: 'Priostía', icon: Package },
     ];
+
+    const handleLogout = async () => {
+        try {
+            await insforge.auth.signOut();
+            router.push('/login');
+            router.refresh(); // Force refresh to clear server components cache
+        } catch (error) {
+            console.error('Error signing out:', error);
+        }
+    };
 
     return (
         <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
@@ -42,6 +56,14 @@ export function Navbar() {
 
                 <div className="flex items-center gap-4">
                     <SyncButton />
+                    <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors"
+                        title="Cerrar Sesión"
+                    >
+                        <LogOut className="h-4 w-4" />
+                        <span className="hidden sm:inline">Salir</span>
+                    </button>
                 </div>
             </div>
         </nav>

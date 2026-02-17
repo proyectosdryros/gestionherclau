@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Hermano } from '@/core/domain/entities/Hermano';
-import { DexieHermanoRepository } from '@/infrastructure/repositories/indexeddb/DexieHermanoRepository';
+
 import { ObtenerHermanoUseCase } from '@/core/use-cases/secretaria/ObtenerHermanoUseCase';
 import { Button } from '@/presentation/components/ui/Button'; // Assuming we have Button, or I'll use standard button
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/presentation/components/ui/Card';
@@ -15,8 +15,9 @@ import { es } from 'date-fns/locale';
 import { PencilIcon, ArrowLeftIcon } from 'lucide-react'; // I need to check if lucide-react is installed, usually is in shadcn
 
 // Instanciar dependencias
-import { DexieFamiliarRepository } from '@/infrastructure/repositories/indexeddb/DexieFamiliarRepository';
-import { DexieMeritoRepository } from '@/infrastructure/repositories/indexeddb/DexieMeritoRepository';
+import { InsForgeHermanoRepository } from '@/infrastructure/repositories/insforge/InsForgeHermanoRepository';
+import { InsForgeFamiliarRepository } from '@/infrastructure/repositories/insforge/InsForgeFamiliarRepository';
+import { InsForgeMeritoRepository } from '@/infrastructure/repositories/insforge/InsForgeMeritoRepository';
 import { RegistrarFamiliarUseCase } from '@/core/use-cases/secretaria/RegistrarFamiliarUseCase';
 import { EliminarFamiliarUseCase } from '@/core/use-cases/secretaria/EliminarFamiliarUseCase';
 import { RegistrarMeritoUseCase } from '@/core/use-cases/secretaria/RegistrarMeritoUseCase';
@@ -27,9 +28,9 @@ import { FamiliarCreateDTO, MeritoCreateDTO } from '@/lib/validations/hermano.sc
 
 // Instanciar dependencias
 // NOTE: In a real app, use dependency injection container or React Context
-const hermanoRepository = new DexieHermanoRepository();
-const familiarRepository = new DexieFamiliarRepository();
-const meritoRepository = new DexieMeritoRepository();
+const hermanoRepository = new InsForgeHermanoRepository();
+const familiarRepository = new InsForgeFamiliarRepository();
+const meritoRepository = new InsForgeMeritoRepository();
 
 const obtenerUseCase = new ObtenerHermanoUseCase(
     hermanoRepository,

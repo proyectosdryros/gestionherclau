@@ -5,10 +5,20 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/presentation/components/ui/Card';
 import { Button } from '@/presentation/components/ui/Button';
 import { Badge } from '@/presentation/components/ui/Badge';
-import { Package, MapPin, AlertCircle, Plus, Search, Filter } from 'lucide-react';
+import { Package, MapPin, AlertCircle, Plus, Search, Filter, Settings, ArrowRightLeft } from 'lucide-react';
 import { Input } from '@/presentation/components/ui/Input';
+import { useEnseres } from '@/presentation/hooks/useEnseres';
 
 export default function PriostiaPage() {
+    const { enseres, loading } = useEnseres();
+
+    const stats = {
+        total: enseres.length,
+        bueno: enseres.filter(e => e.estado === 'BUENO').length,
+        restauracion: enseres.filter(e => e.estado === 'RESTAURACION').length,
+        otros: enseres.filter(e => !['BUENO', 'RESTAURACION'].includes(e.estado)).length,
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -28,7 +38,7 @@ export default function PriostiaPage() {
                         <Package className="h-4 w-4 text-indigo-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">482</div>
+                        <div className="text-2xl font-bold">{loading ? '...' : stats.total}</div>
                         <p className="text-xs text-muted-foreground">Artículos en inventario</p>
                     </CardContent>
                 </Card>
@@ -38,7 +48,7 @@ export default function PriostiaPage() {
                         <AlertCircle className="h-4 w-4 text-green-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">410</div>
+                        <div className="text-2xl font-bold">{loading ? '...' : stats.bueno}</div>
                         <p className="text-xs text-muted-foreground">Listos para procesionar</p>
                     </CardContent>
                 </Card>
@@ -48,18 +58,18 @@ export default function PriostiaPage() {
                         <Settings className="h-4 w-4 text-amber-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">8</div>
+                        <div className="text-2xl font-bold">{loading ? '...' : stats.restauracion}</div>
                         <p className="text-xs text-muted-foreground">En taller especializado</p>
                     </CardContent>
                 </Card>
                 <Card className="bg-blue-500/5 border-blue-500/20">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Préstamos Activos</CardTitle>
+                        <CardTitle className="text-sm font-medium">Otros Estados</CardTitle>
                         <ArrowRightLeft className="h-4 w-4 text-blue-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">3</div>
-                        <p className="text-xs text-muted-foreground">Cedidos a otras entidades</p>
+                        <div className="text-2xl font-bold">{loading ? '...' : stats.otros}</div>
+                        <p className="text-xs text-muted-foreground">Bajas, perdidos o regular</p>
                     </CardContent>
                 </Card>
             </div>
@@ -90,27 +100,33 @@ export default function PriostiaPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y">
-                                {[
-                                    { name: 'Potencias de Cristo', cat: 'ORFEBRERIA', loc: 'Vitrina 1', status: 'BUENO' },
-                                    { name: 'Manto de Salida', cat: 'TEXTIL', loc: 'Cajonera Principal', status: 'RESTAURACION' },
-                                    { name: 'Cruz de Guía', cat: 'TALLA', loc: 'Almacén A', status: 'BUENO' },
-                                ].map((enser, i) => (
-                                    <tr key={i} className="hover:bg-muted/40 transition-colors">
-                                        <td className="p-4 font-medium">{enser.name}</td>
-                                        <td className="p-4"><Badge variant="outline">{enser.cat}</Badge></td>
-                                        <td className="p-4 flex items-center gap-1.5 text-muted-foreground">
-                                            <MapPin className="w-3 h-3" /> {enser.loc}
-                                        </td>
-                                        <td className="p-4">
-                                            <Badge variant={enser.status === 'BUENO' ? 'success' : 'warning'}>
-                                                {enser.status}
-                                            </Badge>
-                                        </td>
-                                        <td className="p-4 text-right">
-                                            <Button variant="ghost" size="sm">Detalles</Button>
-                                        </td>
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={5} className="p-8 text-center text-muted-foreground">Cargando inventario...</td>
                                     </tr>
-                                ))}
+                                ) : enseres.length > 0 ? (
+                                    enseres.map((enser) => (
+                                        <tr key={enser.id} className="hover:bg-muted/40 transition-colors">
+                                            <td className="p-4 font-medium">{enser.nombre}</td>
+                                            <td className="p-4"><Badge variant="outline">{enser.categoria}</Badge></td>
+                                            <td className="p-4 flex items-center gap-1.5 text-muted-foreground">
+                                                <MapPin className="w-3 h-3" /> {enser.ubicacion}
+                                            </td>
+                                            <td className="p-4">
+                                                <Badge variant={enser.estado === 'BUENO' ? 'success' : 'warning'}>
+                                                    {enser.estado}
+                                                </Badge>
+                                            </td>
+                                            <td className="p-4 text-right">
+                                                <Button variant="ghost" size="sm">Detalles</Button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={5} className="p-8 text-center text-muted-foreground">No hay enseres registrados.</td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -120,14 +136,3 @@ export default function PriostiaPage() {
     );
 }
 
-function Settings({ className }: { className?: string }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
-    )
-}
-
-function ArrowRightLeft({ className }: { className?: string }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m16 3 4 4-4 4" /><path d="M20 7H4" /><path d="m8 21-4-4 4-4" /><path d="M4 17h16" /></svg>
-    )
-}

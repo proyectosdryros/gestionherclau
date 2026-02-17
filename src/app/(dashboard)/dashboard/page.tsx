@@ -15,15 +15,71 @@ import {
     Clock
 } from 'lucide-react';
 import Link from 'next/link';
+import { useHermanos } from '@/presentation/hooks/useHermanos';
+import { useRecibos } from '@/presentation/hooks/useRecibos';
+import { usePapeletas } from '@/presentation/hooks/usePapeletas';
+import { useEnseres } from '@/presentation/hooks/useEnseres';
+import { useSync } from '@/presentation/hooks/useSync';
+import { db } from '@/infrastructure/repositories/indexeddb/db';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export default function DashboardSummaryPage() {
+    const { hermanos, loading: loadingHermanos } = useHermanos();
+    const { recibos, loading: loadingRecibos } = useRecibos();
+    const { papeletas, loading: loadingPapeletas } = usePapeletas();
+    const { enseres, loading: loadingEnseres } = useEnseres();
+    const { isSyncing } = useSync();
+
+    // Cola de sincronización en tiempo real
+    const pendingSyncCount = useLiveQuery(
+        () => db.syncQueue.where('status').equals('pending').count(),
+        []
+    ) ?? 0;
+
+    // Cálculos de Tesorería
+    const totalRecibos = recibos.length;
+    const recibosCobrados = recibos.filter(r => r.estado === 'COBRADO').length;
+    const porcentajeCobro = totalRecibos > 0
+        ? Math.round((recibosCobrados / totalRecibos) * 100)
+        : 0;
+
+    // Combinar actividades recientes
+    const recentActivities = [
+        ...hermanos.map(h => ({
+            id: h.id,
+            title: `Nuevo hermano: ${h.nombre} ${h.apellido1}`,
+            date: new Date(h.auditoria.created_at),
+            module: 'Secretaría',
+            color: 'bg-blue-500'
+        })),
+        ...papeletas.map(p => ({
+            id: p.id,
+            title: `Papeleta solicitada`,
+            date: new Date(p.auditoria.created_at),
+            module: 'Cofradía',
+            color: 'bg-purple-500'
+        })),
+        ...recibos.filter(r => r.estado === 'COBRADO').map(r => ({
+            id: r.id,
+            title: `Cobro: ${r.concepto}`,
+            date: new Date(r.auditoria.updated_at),
+            module: 'Tesorería',
+            color: 'bg-emerald-500'
+        }))
+    ]
+        .filter(act => act.date) // Solo actividades con fecha
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, 5);
+
     const modules = [
         {
             title: 'Secretaría',
             description: 'Gestión de hermanos, familiares y méritos.',
             icon: Users,
             href: '/secretaria/hermanos',
-            stats: '1,240 Hermanos',
+            stats: loadingHermanos ? '...' : `${hermanos.length.toLocaleString()} Hermanos`,
             color: 'text-blue-500',
             bg: 'bg-blue-500/10'
         },
@@ -32,7 +88,7 @@ export default function DashboardSummaryPage() {
             description: 'Control de cuotas, recibos y cobros manuales.',
             icon: Wallet,
             href: '/tesoreria',
-            stats: '86% Cobrado',
+            stats: loadingRecibos ? '...' : `${porcentajeCobro}% Cobrado`,
             color: 'text-emerald-500',
             bg: 'bg-emerald-500/10'
         },
@@ -41,7 +97,7 @@ export default function DashboardSummaryPage() {
             description: 'Planificación del cortejo y papeletas de sitio.',
             icon: ClipboardList,
             href: '/cofradia',
-            stats: '150 Papeletas',
+            stats: loadingPapeletas ? '...' : `${papeletas.length.toLocaleString()} Papeletas`,
             color: 'text-purple-500',
             bg: 'bg-purple-500/10'
         },
@@ -50,7 +106,7 @@ export default function DashboardSummaryPage() {
             description: 'Inventario de enseres y patrimonio histórico.',
             icon: Package,
             href: '/priostia',
-            stats: '482 Enseres',
+            stats: loadingEnseres ? '...' : `${enseres.length.toLocaleString()} Enseres`,
             color: 'text-indigo-500',
             bg: 'bg-indigo-500/10'
         }
@@ -61,7 +117,7 @@ export default function DashboardSummaryPage() {
             <div className="flex flex-col gap-2">
                 <h1 className="text-3xl font-bold tracking-tight">Panel de Control</h1>
                 <p className="text-muted-foreground underline-offset-4">
-                    Bienvenido al Gestor de Hermandades. Seleccione un módulo para comenzar.
+                    Datos sincronizados en tiempo real con la base de datos de la Hermandad.
                 </p>
             </div>
 
@@ -101,16 +157,22 @@ export default function DashboardSummaryPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">
-                            {[1, 2, 3].map((i) => (
-                                <div key={i} className="flex items-center gap-4 text-sm">
-                                    <div className="w-2 h-2 rounded-full bg-slate-700" />
-                                    <div className="flex-1">
-                                        <p className="font-medium text-slate-200">Nuevo hermano registrado</p>
-                                        <p className="text-xs text-muted-foreground">Hace 10 minutos</p>
+                            {recentActivities.length > 0 ? (
+                                recentActivities.map((act) => (
+                                    <div key={act.id} className="flex items-center gap-4 text-sm">
+                                        <div className={`w-2 h-2 rounded-full ${act.color}`} />
+                                        <div className="flex-1">
+                                            <p className="font-medium text-slate-200">{act.title}</p>
+                                            <p className="text-xs text-muted-foreground capitalize">
+                                                {formatDistanceToNow(act.date, { addSuffix: true, locale: es })}
+                                            </p>
+                                        </div>
+                                        <Badge variant="outline">{act.module}</Badge>
                                     </div>
-                                    <Badge variant="outline">Secretaría</Badge>
-                                </div>
-                            ))}
+                                ))
+                            ) : (
+                                <p className="text-sm text-muted-foreground text-center py-4">No hay actividad reciente.</p>
+                            )}
                         </div>
                     </CardContent>
                 </Card>
@@ -126,7 +188,9 @@ export default function DashboardSummaryPage() {
                         <div className="space-y-4">
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">Sincronización Cloud</span>
-                                <Badge variant="success">Activa</Badge>
+                                <Badge variant={isSyncing ? 'warning' : 'success'}>
+                                    {isSyncing ? 'Sincronizando...' : 'Activa'}
+                                </Badge>
                             </div>
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">Base de Datos Local</span>
@@ -134,7 +198,9 @@ export default function DashboardSummaryPage() {
                             </div>
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">Cola de Pendientes</span>
-                                <span className="font-mono text-primary">0 cambios</span>
+                                <span className={`font-mono ${pendingSyncCount > 0 ? 'text-amber-500' : 'text-primary'}`}>
+                                    {pendingSyncCount} cambios {pendingSyncCount > 0 ? 'pendientes' : ''}
+                                </span>
                             </div>
                         </div>
                     </CardContent>

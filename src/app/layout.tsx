@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { InsforgeProvider } from "./providers";
 
 export const metadata: Metadata = {
     title: "Gestor de Hermandades",
@@ -15,7 +16,9 @@ export default function RootLayout({
     return (
         <html lang="es">
             <body className="antialiased">
-                {children}
+                <InsforgeProvider>
+                    {children}
+                </InsforgeProvider>
             </body>
         </html>
     );

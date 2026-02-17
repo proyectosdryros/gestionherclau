@@ -7,11 +7,11 @@
 
 import { useState, useEffect } from 'react';
 import { Hermano } from '@/core/domain/entities/Hermano';
-import { DexieHermanoRepository } from '@/infrastructure/repositories/indexeddb/DexieHermanoRepository';
+import { InsForgeHermanoRepository } from '@/infrastructure/repositories/insforge/InsForgeHermanoRepository';
 import { BuscarHermanosUseCase } from '@/core/use-cases/secretaria/BuscarHermanosUseCase';
 import type { EstadoHermano } from '@/core/domain/entities/Hermano';
 
-const repository = new DexieHermanoRepository();
+const repository = new InsForgeHermanoRepository();
 const buscarHermanosUseCase = new BuscarHermanosUseCase(repository);
 
 export interface UseHermanosFilters {

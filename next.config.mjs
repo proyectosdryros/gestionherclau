@@ -7,6 +7,7 @@ const nextConfig = {
     images: {
         formats: ['image/avif', 'image/webp'],
     },
+    transpilePackages: ['@react-pdf/renderer'],
 };
 
 export default nextConfig;
