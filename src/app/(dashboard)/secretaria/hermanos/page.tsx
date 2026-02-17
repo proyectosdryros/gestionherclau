@@ -45,7 +45,6 @@ export default function HermanosPage() {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 title="Nuevo Hermano"
-                size="lg"
             >
                 <HermanoForm onSuccess={handleSuccess} onCancel={() => setIsModalOpen(false)} />
             </Modal>
