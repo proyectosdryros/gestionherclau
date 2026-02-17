@@ -7,7 +7,7 @@ async function main() {
     console.log('URL:', process.env.NEXT_PUBLIC_INSFORGE_URL);
 
     // Import the client directly
-    const { insforge } = await import('../src/lib/insforge.ts');
+    const { insforge } = await import('../src/lib/insforge');
 
     // Simple count check
     const { data, error } = await insforge.database.from('hermanos').select('count', { count: 'exact', head: true });
