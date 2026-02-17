@@ -34,7 +34,7 @@ export class BuscarHermanosUseCase {
                 const searchLower = input.search.toLowerCase();
                 hermanos = hermanos.filter((h) => {
                     const fullName = h.getNombreCompleto().toLowerCase();
-                    const dni = h.dni.getValue().toLowerCase();
+                    const dni = h.dni?.getValue()?.toLowerCase() || '';
                     return fullName.includes(searchLower) || dni.includes(searchLower);
                 });
             }
