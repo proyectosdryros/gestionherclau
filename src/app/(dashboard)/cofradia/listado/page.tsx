@@ -12,12 +12,14 @@ import { Badge } from '@/presentation/components/ui/Badge';
 import { Input } from '@/presentation/components/ui/Input';
 import dynamic from 'next/dynamic';
 
+import { Suspense } from 'react';
+
 const PDFDownloadButton = dynamic<any>(
     () => import('@/presentation/components/cofradia/PDFDownloadButton').then((mod) => mod.PDFDownloadButton),
     { ssr: false, loading: () => <div className="h-16 bg-slate-100 animate-pulse rounded-2xl flex-1" /> }
 );
 
-export default function ListadoPapeletasPage() {
+function ListadoPapeletasContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { papeletas, eliminarPapeleta, loading: loadingPapeletas } = usePapeletas();
@@ -272,5 +274,13 @@ export default function ListadoPapeletasPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function ListadoPapeletasPage() {
+    return (
+        <Suspense fallback={<div className="flex h-96 items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+            <ListadoPapeletasContent />
+        </Suspense>
     );
 }
