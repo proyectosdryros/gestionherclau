@@ -80,38 +80,104 @@ export default function CofradiaPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
-                <Card>
+                <Card
+                    className="cursor-pointer hover:border-primary/50 transition-colors group"
+                    onClick={() => router.push('/cofradia/listado?estado=SOLICITADA')}
+                >
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Solicitudes Totales</CardTitle>
-                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-medium">Solicitudes en Espera</CardTitle>
+                        <Users className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{papeletas.length}</div>
-                        <p className="text-xs text-muted-foreground">Papeletas pedidas para este año</p>
+                        <div className="text-2xl font-bold">{papeletas.filter(p => p.estado === 'SOLICITADA').length}</div>
+                        <p className="text-xs text-muted-foreground group-hover:text-primary/70 transition-colors">Ver lista de espera →</p>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card
+                    className="cursor-pointer hover:border-green-500/50 transition-colors group"
+                    onClick={() => router.push('/cofradia/listado?estado=ASIGNADA')}
+                >
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Puestos Asignados</CardTitle>
-                        <UserCheck className="h-4 w-4 text-muted-foreground" />
+                        <UserCheck className="h-4 w-4 text-muted-foreground group-hover:text-green-500 transition-colors" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-green-600">
                             {papeletas.filter(p => p.estado === 'ASIGNADA' || p.estado === 'EMITIDA').length}
                         </div>
-                        <p className="text-xs text-muted-foreground">Cortejo completado</p>
+                        <p className="text-xs text-muted-foreground group-hover:text-green-500/70 transition-colors">Ver asignaciones →</p>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card
+                    className="cursor-pointer hover:border-amber-500/50 transition-colors group"
+                    onClick={() => router.push('/cofradia/listado?manual=true')}
+                >
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Asignaciones Manuales</CardTitle>
-                        <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-sm font-medium">Ajustes Manuales</CardTitle>
+                        <ArrowRightLeft className="h-4 w-4 text-muted-foreground group-hover:text-amber-500 transition-colors" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-amber-500">
                             {papeletas.filter(p => p.esAsignacionManual).length}
                         </div>
-                        <p className="text-xs text-muted-foreground">Ajustes manuales realizados</p>
+                        <p className="text-xs text-muted-foreground group-hover:text-amber-500/70 transition-colors">Revisar cambios manuales →</p>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Nueva Sección de Seguimiento Directo */}
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-bold tracking-tight">Solicitudes Pendientes (Lista de Espera)</h2>
+                    <Button variant="link" onClick={() => router.push('/cofradia/listado?estado=SOLICITADA')} className="text-primary font-bold">
+                        Gestionar todas
+                    </Button>
+                </div>
+
+                <Card className="border-slate-800">
+                    <CardContent className="p-0">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b">
+                                        <th className="text-left p-4 font-bold">Hermano</th>
+                                        <th className="text-left p-4 font-bold">Nº</th>
+                                        <th className="text-left p-4 font-bold">Observaciones</th>
+                                        <th className="text-right p-4 font-bold">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {papeletas.filter(p => p.estado === 'SOLICITADA').length === 0 ? (
+                                        <tr>
+                                            <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                                                No hay solicitudes en espera para este año.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        papeletas.filter(p => p.estado === 'SOLICITADA').slice(0, 5).map((p) => {
+                                            const h = hermanos.find(herm => herm.id === p.hermanoId);
+                                            return (
+                                                <tr key={p.id} className="border-b hover:bg-slate-50 transition-colors">
+                                                    <td className="p-4 font-medium">{h ? `${h.nombre} ${h.apellido1}` : 'Cargando...'}</td>
+                                                    <td className="p-4 font-mono text-xs">{h?.numeroHermano || '-'}</td>
+                                                    <td className="p-4 text-slate-500 truncate max-w-[200px]">{p.observaciones || 'Sin notas'}</td>
+                                                    <td className="p-4 text-right">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="text-primary hover:text-primary/80 font-bold"
+                                                            onClick={() => router.push('/cofradia/listado')}
+                                                        >
+                                                            Asignar
+                                                        </Button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </CardContent>
                 </Card>
             </div>

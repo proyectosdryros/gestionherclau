@@ -6,10 +6,12 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/presentation/compone
 import { Button } from '@/presentation/components/ui/Button';
 import { usePapeletas } from '@/presentation/hooks/usePapeletas';
 import { useHermanos } from '@/presentation/hooks/useHermanos';
-import { Trash2, ArrowLeft, Loader2, CheckCircle2, Clock, Printer, X, Download } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { Search, Trash2, ArrowLeft, Loader2, CheckCircle2, Clock, Printer, X, Download, Filter } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Badge } from '@/presentation/components/ui/Badge';
+import { Input } from '@/presentation/components/ui/Input';
 import dynamic from 'next/dynamic';
+
 const PDFDownloadButton = dynamic<any>(
     () => import('@/presentation/components/cofradia/PDFDownloadButton').then((mod) => mod.PDFDownloadButton),
     { ssr: false, loading: () => <div className="h-16 bg-slate-100 animate-pulse rounded-2xl flex-1" /> }
@@ -17,11 +19,17 @@ const PDFDownloadButton = dynamic<any>(
 
 export default function ListadoPapeletasPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { papeletas, eliminarPapeleta, loading: loadingPapeletas } = usePapeletas();
     const { hermanos } = useHermanos();
     const [loading, setLoading] = useState(false);
     const [selectedPapeleta, setSelectedPapeleta] = useState<any | null>(null);
     const [isClient, setIsClient] = useState(false);
+
+    // Filter states
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState(searchParams.get('estado') || '');
+    const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
 
     useEffect(() => {
         setIsClient(true);
@@ -43,23 +51,17 @@ export default function ListadoPapeletasPage() {
 
     const handleAnular = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
-        console.log('[ListadoPapeletas] Inicio handleAnular con ID:', id);
         if (!confirm('¿Estás seguro de que deseas anular esta papeleta? Esto no eliminará el recibo automáticamente (debe hacerse en Tesorería si es necesario).')) {
-            console.log('[ListadoPapeletas] Cancelado por el usuario');
             return;
         }
 
         try {
-            console.log('[ListadoPapeletas] Llamando a eliminarPapeleta...');
             setLoading(true);
             await eliminarPapeleta(id);
-            console.log('[ListadoPapeletas] eliminarPapeleta completado con éxito');
             alert('Papeleta anulada correctamente');
         } catch (err: any) {
-            console.error('[ListadoPapeletas] ERROR CATCH:', err);
             alert(`Error al anular la papeleta: ${err.message || 'Error desconocido'}`);
         } finally {
-            console.log('[ListadoPapeletas] Finalizando carga');
             setLoading(false);
         }
     };
@@ -77,6 +79,21 @@ export default function ListadoPapeletasPage() {
         }
     };
 
+    const filteredPapeletas = papeletas.filter(p => {
+        const hermano = hermanos.find(h => h.id === p.hermanoId);
+        const matchesSearch = !searchTerm ||
+            hermano?.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            hermano?.apellido1.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            hermano?.numeroHermano?.toString().includes(searchTerm) ||
+            p.id.includes(searchTerm);
+
+        const matchesStatus = !statusFilter || p.estado === statusFilter;
+        const matchesYear = !yearFilter || p.anio.toString() === yearFilter;
+        const matchesManual = !searchParams.get('manual') || p.esAsignacionManual;
+
+        return matchesSearch && matchesStatus && matchesYear && matchesManual;
+    });
+
     if (loadingPapeletas) {
         return (
             <div className="flex h-96 items-center justify-center">
@@ -88,16 +105,57 @@ export default function ListadoPapeletasPage() {
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                <Button variant="ghost" size="icon" onClick={() => router.push('/cofradia')}>
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Listado de Papeletas</h1>
-                    <p className="text-muted-foreground">Gestión y control de papeletas emitidas para el año actual.</p>
+                <div className="flex-1">
+                    <h1 className="text-3xl font-bold tracking-tight">Gestión de Papeletas</h1>
+                    <p className="text-muted-foreground">Filtra, busca y gestiona las solicitudes de este año.</p>
                 </div>
             </div>
 
-            <Card>
+            <Card className="border-slate-800">
+                <CardHeader>
+                    <div className="flex flex-col md:flex-row gap-4 items-end">
+                        <div className="flex-1 w-full space-y-2">
+                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Buscar Hermano</label>
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                <Input
+                                    placeholder="Nombre, apellidos o número de hermano..."
+                                    className="pl-10 h-10 rounded-xl bg-slate-50 border-slate-200"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="w-full md:w-48 space-y-2">
+                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Estado</label>
+                            <select
+                                className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                            >
+                                <option value="">Todos los estados</option>
+                                <option value="SOLICITADA">En Espera (Solicitadas)</option>
+                                <option value="ASIGNADA">Asignadas</option>
+                                <option value="EMITIDA">Emitidas / Cobradas</option>
+                            </select>
+                        </div>
+                        <div className="w-full md:w-32 space-y-2">
+                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Año</label>
+                            <select
+                                className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:ring-2 focus:ring-primary focus:outline-none"
+                                value={yearFilter}
+                                onChange={(e) => setYearFilter(e.target.value)}
+                            >
+                                <option value="2024">2024</option>
+                                <option value="2025">2025</option>
+                                <option value="2026">2026</option>
+                            </select>
+                        </div>
+                    </div>
+                </CardHeader>
                 <CardContent className="p-0">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
@@ -112,24 +170,24 @@ export default function ListadoPapeletasPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {papeletas.length === 0 ? (
+                                {filteredPapeletas.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} className="p-8 text-center text-muted-foreground">
-                                            No hay papeletas registradas todavía.
+                                        <td colSpan={6} className="p-8 text-center text-muted-foreground font-medium italic">
+                                            No hay papeletas que coincidan con los filtros seleccionados.
                                         </td>
                                     </tr>
                                 ) : (
-                                    papeletas.map((p) => (
+                                    filteredPapeletas.map((p) => (
                                         <tr
                                             key={p.id}
-                                            className="border-b hover:bg-slate-50 transition-colors cursor-pointer"
+                                            className={`border-b hover:bg-slate-50 transition-colors cursor-pointer ${p.estado === 'SOLICITADA' ? 'bg-blue-50/20' : ''}`}
                                             onClick={() => setSelectedPapeleta(p)}
                                         >
                                             <td className="p-4 font-mono">{getNumeroHermano(p.hermanoId)}</td>
                                             <td className="p-4 font-medium">{getNombreHermano(p.hermanoId)}</td>
                                             <td className="p-4">{p.anio}</td>
                                             <td className="p-4">{getStatusBadge(p.estado)}</td>
-                                            <td className="p-4 italic text-slate-500">{p.observaciones || '-'}</td>
+                                            <td className="p-4 italic text-slate-500 truncate max-w-[200px]">{p.observaciones || '-'}</td>
                                             <td className="p-4 text-right">
                                                 <Button
                                                     variant="ghost"
