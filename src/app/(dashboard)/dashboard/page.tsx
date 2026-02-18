@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRole } from '@/presentation/hooks/useRole';
+import { useMiPerfil } from '@/presentation/hooks/useMiPerfil';
 import { useHermanos } from '@/presentation/hooks/useHermanos';
 import { useRecibos } from '@/presentation/hooks/useRecibos';
 import { usePapeletas } from '@/presentation/hooks/usePapeletas';
@@ -31,6 +32,7 @@ import { useConfiguracion } from '@/presentation/hooks/useConfiguracion';
 
 export default function DashboardSummaryPage() {
     const { role, isHermano, user } = useRole();
+    const { miPerfil } = useMiPerfil();
     const { temporadaActiva } = useConfiguracion();
     const { hermanos, loading: loadingHermanos } = useHermanos();
     const { recibos, loading: loadingRecibos } = useRecibos();
@@ -59,7 +61,7 @@ export default function DashboardSummaryPage() {
                             </div>
                             <div>
                                 <h1 className="text-3xl font-black tracking-tighter text-slate-900 leading-none">
-                                    Paz y Bien, {user?.name?.split(' ')[0]}
+                                    Paz y Bien, {miPerfil?.nombre || user?.email?.split('@')[0]}
                                 </h1>
                                 <p className="text-slate-500 font-medium tracking-tight mt-1">
                                     Bienvenido a tu área personal del sistema.
