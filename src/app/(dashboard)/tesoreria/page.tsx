@@ -162,7 +162,7 @@ export default function TesoreriaPage() {
                                     <th className="p-4 text-right">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y text-slate-50">
+                            <tbody className="divide-y text-slate-900">
                                 {loading ? (
                                     <tr><td colSpan={5} className="p-4 text-center">Cargando recibos...</td></tr>
                                 ) : filteredRecibos.length === 0 ? (
