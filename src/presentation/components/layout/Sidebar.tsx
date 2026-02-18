@@ -24,6 +24,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useRole } from '@/presentation/hooks/useRole';
 import { insforge } from '@/lib/insforge';
+import packageInfo from '../../../../package.json';
 
 const navItems = [
     { name: 'Inicio', href: '/dashboard', icon: LayoutDashboard },
@@ -207,7 +208,10 @@ export function Sidebar() {
                     {!isCollapsed && (
                         <div className="flex-1 min-w-0">
                             <p className="text-xs font-black text-white truncate">{user?.email?.split('@')[0] || 'Usuario'}</p>
-                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter truncate">{role}</p>
+                            <div className="flex items-center justify-between">
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter truncate">{role}</p>
+                                <p className="text-[8px] font-black text-primary/60 uppercase tracking-widest leading-none">v{packageInfo.version}</p>
+                            </div>
                         </div>
                     )}
                 </div>
