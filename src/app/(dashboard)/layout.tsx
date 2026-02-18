@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Navbar } from '@/presentation/components/ui/Navbar';
+import { Sidebar } from '@/presentation/components/layout/Sidebar';
 
 export default function DashboardLayout({
     children,
@@ -8,10 +8,12 @@ export default function DashboardLayout({
     children: React.ReactNode;
 }) {
     return (
-        <div className="relative flex min-h-screen flex-col">
-            <Navbar />
-            <main className="flex-1 container max-w-7xl mx-auto py-6 px-4">
-                {children}
+        <div className="flex min-h-screen bg-slate-50">
+            <Sidebar />
+            <main className="flex-1 w-full overflow-hidden">
+                <div className="container max-w-[1400px] mx-auto py-8 px-4 md:px-8">
+                    {children}
+                </div>
             </main>
         </div>
     );
