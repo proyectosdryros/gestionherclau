@@ -125,7 +125,7 @@ export function Sidebar() {
                 <div className="h-px bg-slate-900 my-4 mx-3" />
 
                 {/* Admin/Config Section */}
-                {(isSuperadmin || role === 'junta_gobierno') && (
+                {(isSuperadmin || role === 'JUNTA') && (
                     <Link
                         href="/configuracion"
                         className={cn(

@@ -76,7 +76,7 @@ export default function ConfiguracionPage() {
         }
     };
 
-    if (!isSuperadmin && currentRole !== 'junta_gobierno') {
+    if (!isSuperadmin && currentRole !== 'JUNTA') {
         return (
             <div className="flex h-[60vh] flex-col items-center justify-center space-y-4">
                 <AlertCircle className="w-16 h-16 text-red-500 animate-pulse" />
