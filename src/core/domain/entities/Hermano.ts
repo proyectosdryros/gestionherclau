@@ -42,7 +42,8 @@ export class Hermano {
         public readonly consentimientos: ConsentimientosRGPD,
         public readonly auditoria: AuditoriaFields,
         public readonly apodo: string | null = null,
-        public readonly rol: string | null = 'HERMANO'
+        public readonly rol: string | null = 'HERMANO',
+        public readonly userId: string | null = null
     ) { }
 
     getNombreCompleto(): string {
@@ -87,7 +88,8 @@ export class Hermano {
                 version: this.auditoria.version + 1,
             },
             updates.apodo !== undefined ? updates.apodo : this.apodo,
-            updates.rol !== undefined ? updates.rol : this.rol
+            updates.rol !== undefined ? updates.rol : this.rol,
+            updates.userId !== undefined ? updates.userId : this.userId
         );
     }
 

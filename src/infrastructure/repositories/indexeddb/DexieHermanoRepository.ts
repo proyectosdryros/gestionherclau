@@ -30,7 +30,9 @@ function dtoToEntity(dto: HermanoDTO): Hermano {
         dto.cuotasAlDia,
         dto.consentimientos,
         dto.auditoria,
-        dto.apodo ?? null
+        dto.apodo ?? null,
+        dto.rol ?? 'HERMANO',
+        dto.userId ?? null
     );
 }
 
@@ -54,6 +56,7 @@ function entityToDto(entity: Hermano): HermanoDTO {
         cuotasAlDia: entity.cuotasAlDia,
         consentimientos: entity.consentimientos,
         auditoria: entity.auditoria,
+        userId: entity.userId
     };
 }
 
@@ -70,6 +73,11 @@ export class DexieHermanoRepository implements HermanoRepository {
 
     async findByNumero(numero: number): Promise<Hermano | null> {
         const dto = await db.hermanos.where('numeroHermano').equals(numero).first();
+        return dto ? dtoToEntity(dto) : null;
+    }
+
+    async findByUserId(userId: string): Promise<Hermano | null> {
+        const dto = await db.hermanos.where('userId').equals(userId).first();
         return dto ? dtoToEntity(dto) : null;
     }
 

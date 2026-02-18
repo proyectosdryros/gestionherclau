@@ -85,6 +85,19 @@ export class HermandadesDB extends Dexie {
             movimientos_enseres: 'id, enserId, tipo, fecha, responsable',
         });
 
+        this.version(5).stores({
+            hermanos: 'id, numeroHermano, dni, email, estado, [estado+cuotasAlDia], fechaAlta, userId',
+            familiares: 'id, hermanoId, tipo',
+            meritos: 'id, hermanoId, fecha, tipo',
+            syncQueue: 'id, [status+priority], [status+nextRetryAt], localTimestamp, entityType',
+            recibos: 'id, hermanoId, estado, tipo, fechaEmision',
+            pagos: 'id, reciboId, fechaPago, metodoPago',
+            papeletas: 'id, [hermanoId+anio], hermanoId, anio, estado, puestoAsignadoId',
+            puestos: 'id, nombre, categoria, seccion',
+            enseres: 'id, nombre, categoria, estado, ubicacion',
+            movimientos_enseres: 'id, enserId, tipo, fecha, responsable',
+        });
+
         // Hooks para encriptación/desencriptación
         this.hermanos.hook('creating', this.encryptSensitiveFields);
         this.hermanos.hook('reading', this.decryptSensitiveFields);

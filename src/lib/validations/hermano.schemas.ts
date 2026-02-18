@@ -104,6 +104,8 @@ export const HermanoSchema = z.object({
     cuotasAlDia: z.boolean(),
     consentimientos: ConsentimientosRGPDSchema,
     auditoria: AuditoriaSchema,
+    userId: z.string().nullable().optional(),
+    rol: z.string().nullable().optional(),
 });
 
 /**
