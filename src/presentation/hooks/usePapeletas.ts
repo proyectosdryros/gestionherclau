@@ -5,9 +5,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { Papeleta } from '@/core/domain/entities/Papeleta';
 import { InsForgePapeletaRepository } from '@/infrastructure/repositories/insforge/InsForgePapeletaRepository';
 
+import { useConfiguracion } from '@/presentation/hooks/useConfiguracion';
+
 const repo = new InsForgePapeletaRepository();
 
 export function usePapeletas() {
+    const { activeAnio } = useConfiguracion();
     const [papeletas, setPapeletas] = useState<Papeleta[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -15,14 +18,14 @@ export function usePapeletas() {
     const refresh = useCallback(async () => {
         try {
             setLoading(true);
-            const data = await repo.findAll();
+            const data = await repo.findAll(activeAnio);
             setPapeletas(data);
         } catch (err) {
             setError(err instanceof Error ? err : new Error('Error al cargar papeletas'));
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [activeAnio]);
 
     useEffect(() => {
         refresh();

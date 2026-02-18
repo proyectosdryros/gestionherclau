@@ -31,6 +31,7 @@ const navItems = [
         name: 'Secretaría',
         href: '/secretaria/hermanos',
         icon: Users,
+        adminOnly: true,
         subItems: [
             { name: 'Hermanos', href: '/secretaria/hermanos' },
             { name: 'Altas/Bajas', href: '/secretaria/movimientos' },
@@ -40,6 +41,7 @@ const navItems = [
         name: 'Tesorería',
         href: '/tesoreria',
         icon: Wallet,
+        adminOnly: true,
         subItems: [
             { name: 'Recibos', href: '/tesoreria' },
             { name: 'Cuotas', href: '/tesoreria/cuotas' },
@@ -50,13 +52,15 @@ const navItems = [
         name: 'Cofradía',
         href: '/cofradia',
         icon: ClipboardList,
+        adminOnly: true,
         subItems: [
             { name: 'Dashboard', href: '/cofradia' },
             { name: 'Venta Papeletas', href: '/cofradia/ventas' },
             { name: 'Listado', href: '/cofradia/listado' },
         ]
     },
-    { name: 'Priostía', href: '/priostia', icon: Package },
+    { name: 'Priostía', href: '/priostia', icon: Package, adminOnly: true },
+    { name: 'Mi Perfil', href: '/perfil', icon: UserCircle, hermanoOnly: true },
 ];
 
 export function Sidebar() {
@@ -65,6 +69,7 @@ export function Sidebar() {
     const { isSuperadmin, role, user } = useRole();
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
+    const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
     const handleLogout = async () => {
         try {
@@ -77,7 +82,7 @@ export function Sidebar() {
     };
 
     const isActive = (href: string) => {
-        if (href === '/dashboard') return pathname === href;
+        if (href === '/dashboard' || href === '/configuracion') return pathname === href;
         return pathname.startsWith(href);
     };
 
@@ -98,49 +103,97 @@ export function Sidebar() {
 
             {/* Navigation Section */}
             <nav className="flex-1 px-3 space-y-1 mt-4 overflow-y-auto scrollbar-hide">
-                {navItems.map((item) => (
-                    <div key={item.name}>
-                        <Link
-                            href={item.href}
-                            className={cn(
-                                "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative",
-                                isActive(item.href)
-                                    ? "bg-primary text-white shadow-lg shadow-primary/20"
-                                    : "hover:bg-slate-900 hover:text-white"
+                {navItems
+                    .filter(item => {
+                        if (item.adminOnly) return isSuperadmin || role === 'JUNTA';
+                        if (item.hermanoOnly) return role === 'HERMANO';
+                        return true;
+                    })
+                    .map((item) => (
+                        <div key={item.name} className="flex flex-col gap-1">
+                            <Link
+                                href={item.href}
+                                onClick={() => !isCollapsed && setExpandedItem(expandedItem === item.name ? null : item.name)}
+                                className={cn(
+                                    "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative",
+                                    isActive(item.href)
+                                        ? "bg-primary text-white shadow-lg shadow-primary/20"
+                                        : "hover:bg-slate-900 hover:text-white"
+                                )}
+                            >
+                                <item.icon className={cn(
+                                    "w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110",
+                                    isActive(item.href) ? "text-white" : "text-slate-500 group-hover:text-primary"
+                                )} />
+                                {!isCollapsed && <span className="text-sm font-bold tracking-tight grow">{item.name}</span>}
+                            </Link>
+
+                            {/* Sub-items rendering */}
+                            {!isCollapsed && item.subItems && (isActive(item.href) || expandedItem === item.name) && (
+                                <div className="ml-11 flex flex-col gap-1 mt-1 mb-2 animate-in slide-in-from-top-2 duration-200">
+                                    {item.subItems.map((sub) => (
+                                        <Link
+                                            key={sub.name}
+                                            href={sub.href}
+                                            className={cn(
+                                                "text-xs font-bold py-2 px-3 rounded-lg transition-colors",
+                                                pathname === sub.href
+                                                    ? "text-primary bg-primary/5"
+                                                    : "text-slate-500 hover:text-white hover:bg-slate-900/50"
+                                            )}
+                                        >
+                                            {sub.name}
+                                        </Link>
+                                    ))}
+                                </div>
                             )}
-                        >
-                            <item.icon className={cn(
-                                "w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110",
-                                isActive(item.href) ? "text-white" : "text-slate-500 group-hover:text-primary"
-                            )} />
-                            {!isCollapsed && <span className="text-sm font-bold tracking-tight">{item.name}</span>}
-                            {isActive(item.href) && !isCollapsed && (
-                                <div className="absolute right-3 w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-                            )}
-                        </Link>
-                    </div>
-                ))}
+                        </div>
+                    ))}
 
                 {/* Separator */}
                 <div className="h-px bg-slate-900 my-4 mx-3" />
 
                 {/* Admin/Config Section */}
                 {(isSuperadmin || role === 'JUNTA') && (
-                    <Link
-                        href="/configuracion"
-                        className={cn(
-                            "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group",
-                            isActive('/configuracion')
-                                ? "bg-amber-600 text-white shadow-lg shadow-amber-600/20"
-                                : "hover:bg-slate-900 hover:text-white"
+                    <div className="flex flex-col gap-1">
+                        <Link
+                            href="/configuracion"
+                            className={cn(
+                                "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group",
+                                isActive('/configuracion')
+                                    ? "bg-amber-600 text-white shadow-lg shadow-amber-600/20"
+                                    : "hover:bg-slate-900 hover:text-white"
+                            )}
+                        >
+                            <Settings className={cn(
+                                "w-5 h-5 flex-shrink-0",
+                                isActive('/configuracion') ? "text-white" : "text-amber-500/50 group-hover:text-amber-500"
+                            )} />
+                            {!isCollapsed && <span className="text-sm font-bold tracking-tight">Configuración</span>}
+                        </Link>
+
+                        {/* Sub-items for Configuration */}
+                        {!isCollapsed && isActive('/configuracion') && (
+                            <div className="ml-11 flex flex-col gap-1 mt-1 mb-2 animate-in slide-in-from-top-2 duration-200">
+                                <Link
+                                    href="/configuracion?tab=temporadas"
+                                    className={cn(
+                                        "text-xs font-bold py-2 px-3 rounded-lg transition-colors text-slate-500 hover:text-white hover:bg-slate-900/50"
+                                    )}
+                                >
+                                    Temporadas
+                                </Link>
+                                <Link
+                                    href="/configuracion?tab=roles"
+                                    className={cn(
+                                        "text-xs font-bold py-2 px-3 rounded-lg transition-colors text-slate-500 hover:text-white hover:bg-slate-900/50"
+                                    )}
+                                >
+                                    Roles y Permisos
+                                </Link>
+                            </div>
                         )}
-                    >
-                        <Settings className={cn(
-                            "w-5 h-5 flex-shrink-0",
-                            isActive('/configuracion') ? "text-white" : "text-amber-500/50 group-hover:text-amber-500"
-                        )} />
-                        {!isCollapsed && <span className="text-sm font-bold tracking-tight">Configuración</span>}
-                    </Link>
+                    </div>
                 )}
             </nav>
 

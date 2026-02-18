@@ -59,6 +59,7 @@ export function useConfiguracion() {
     return {
         temporadas,
         temporadaActiva,
+        activeAnio: temporadaActiva?.anio || new Date().getFullYear(),
         loading,
         error,
         iniciarNuevaTemporada,

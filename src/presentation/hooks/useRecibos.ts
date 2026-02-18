@@ -4,10 +4,13 @@ import { Recibo } from '@/core/domain/entities/Recibo';
 import { InsForgeReciboRepository } from '@/infrastructure/repositories/insforge/InsForgeReciboRepository';
 import { MetodoPago } from '@/core/domain/entities/Pago';
 
+import { useConfiguracion } from '@/presentation/hooks/useConfiguracion';
+
 // Use Cloud Repository directly for now to ensure consistency
 const reciboRepo = new InsForgeReciboRepository();
 
 export function useRecibos() {
+    const { activeAnio } = useConfiguracion();
     const [recibos, setRecibos] = useState<Recibo[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -15,14 +18,14 @@ export function useRecibos() {
     const refresh = useCallback(async () => {
         try {
             setLoading(true);
-            const data = await reciboRepo.findAll();
+            const data = await reciboRepo.findAll(activeAnio);
             setRecibos(data);
         } catch (err) {
             setError(err instanceof Error ? err : new Error('Error al cargar recibos'));
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [activeAnio]);
 
     useEffect(() => {
         refresh();

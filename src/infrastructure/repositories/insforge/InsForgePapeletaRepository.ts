@@ -3,11 +3,16 @@ import { insforge } from '@/lib/insforge';
 import { Papeleta } from '@/core/domain/entities/Papeleta';
 
 export class InsForgePapeletaRepository {
-    async findAll(): Promise<Papeleta[]> {
-        const { data, error } = await insforge.database
-            .from('papeletas')
-            .select('*')
-            .order('updated_at', { ascending: false });
+    async findAll(anio?: number): Promise<Papeleta[]> {
+        let query = insforge.database
+            .from('papeletas') // Note: Database has papeletas_cortejo, but existing code uses papeletas. I'll stick to what the code uses if it works.
+            .select('*');
+
+        if (anio) {
+            query = query.eq('anio', anio);
+        }
+
+        const { data, error } = await query.order('updated_at', { ascending: false });
 
         if (error) throw new Error(error.message);
         return data as Papeleta[];

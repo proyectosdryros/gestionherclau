@@ -21,6 +21,21 @@ export class InsForgeHermanoRepository implements HermanoRepository {
         return data ? this.mapToDomain(data) : null;
     }
 
+    async findByUserId(userId: string): Promise<Hermano | null> {
+        const { data, error } = await insforge.database
+            .from('hermanos')
+            .select('*')
+            .eq('user_id', userId)
+            .single();
+
+        if (error) {
+            console.error('Error fetching hermano by User ID:', error);
+            return null;
+        }
+
+        return data ? this.mapToDomain(data) : null;
+    }
+
     async findByDni(dni: DNI): Promise<Hermano | null> {
         const { data, error } = await insforge.database
             .from('hermanos')
@@ -172,7 +187,8 @@ export class InsForgeHermanoRepository implements HermanoRepository {
                 updated_at: new Date(data.auditoria.updated_at),
                 version: data.auditoria.version
             },
-            data.apodo
+            data.apodo,
+            data.rol
         );
     }
 
@@ -182,6 +198,7 @@ export class InsForgeHermanoRepository implements HermanoRepository {
             numeroHermano: hermano.numeroHermano,
             nombre: hermano.nombre,
             apodo: hermano.apodo,
+            rol: hermano.rol,
             apellido1: hermano.apellido1,
             apellido2: hermano.apellido2,
             dni: hermano.dni?.toString() ?? null,

@@ -23,6 +23,11 @@ export interface HermanoRepository {
     findByNumero(numero: number): Promise<Hermano | null>;
 
     /**
+     * Obtiene un hermano vinculado a un User ID de Auth
+     */
+    findByUserId(userId: string): Promise<Hermano | null>;
+
+    /**
      * Busca hermanos con filtros opcionales
      */
     findAll(filters?: {

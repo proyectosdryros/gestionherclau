@@ -22,10 +22,18 @@ export class InsForgeReciboRepository {
         );
     }
 
-    async findAll(): Promise<Recibo[]> {
-        const { data, error } = await insforge.database
+    async findAll(anio?: number): Promise<Recibo[]> {
+        let query = insforge.database
             .from('recibos')
             .select('*');
+
+        if (anio) {
+            query = query
+                .gte('fechaEmision', `${anio}-01-01`)
+                .lte('fechaEmision', `${anio}-12-31`);
+        }
+
+        const { data, error } = await query;
 
         if (error) throw new Error(error.message);
         return (data || []).map(this.mapToEntity);

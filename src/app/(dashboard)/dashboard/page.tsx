@@ -12,9 +12,12 @@ import {
     Package,
     ArrowRight,
     ShieldCheck,
-    Clock
+    Clock,
+    CalendarDays,
+    UserCircle
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRole } from '@/presentation/hooks/useRole';
 import { useHermanos } from '@/presentation/hooks/useHermanos';
 import { useRecibos } from '@/presentation/hooks/useRecibos';
 import { usePapeletas } from '@/presentation/hooks/usePapeletas';
@@ -24,8 +27,11 @@ import { db } from '@/infrastructure/repositories/indexeddb/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useConfiguracion } from '@/presentation/hooks/useConfiguracion';
 
 export default function DashboardSummaryPage() {
+    const { role, isHermano, user } = useRole();
+    const { temporadaActiva } = useConfiguracion();
     const { hermanos, loading: loadingHermanos } = useHermanos();
     const { recibos, loading: loadingRecibos } = useRecibos();
     const { papeletas, loading: loadingPapeletas } = usePapeletas();
@@ -37,6 +43,77 @@ export default function DashboardSummaryPage() {
         () => db.syncQueue.where('status').equals('pending').count(),
         []
     ) ?? 0;
+
+    // Vista simplificada para Hermanos
+    if (isHermano) {
+        return (
+            <>
+                <title>Inicio | Gestión de Hermandad</title>
+                <meta name="description" content="Bienvenido al panel de control de tu hermandad. Consulta la temporada activa y accede a tus gestiones." />
+
+                <div className="space-y-8 max-w-4xl mx-auto">
+                    <div className="flex flex-col gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                                <UserCircle className="w-10 h-10" />
+                            </div>
+                            <div>
+                                <h1 className="text-3xl font-black tracking-tighter text-slate-900 leading-none">
+                                    Paz y Bien, {user?.name?.split(' ')[0]}
+                                </h1>
+                                <p className="text-slate-500 font-medium tracking-tight mt-1">
+                                    Bienvenido a tu área personal del sistema.
+                                </p>
+                            </div>
+                        </div>
+
+                        {temporadaActiva && (
+                            <Badge className="w-fit h-8 px-3 rounded-lg bg-slate-100 text-slate-600 border-slate-200 text-sm font-bold flex items-center gap-2">
+                                <CalendarDays className="w-4 h-4" />
+                                Temporada {temporadaActiva.nombre} activa
+                            </Badge>
+                        )}
+                    </div>
+
+                    <div className="grid gap-6 md:grid-cols-2">
+                        <Card className="hover:shadow-lg transition-all border-slate-200 group overflow-hidden">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors" />
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <UserCircle className="w-5 h-5 text-primary" />
+                                    Mis Datos de Hermano
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-slate-600 mb-6">
+                                    Consulta tu número de hermano, antigüedad, estado de cuotas y más.
+                                </p>
+                                <Button asChild className="w-full justify-between rounded-xl group" id="btn-perfil-acceder">
+                                    <Link href="/perfil">
+                                        Entrar a Mi Perfil <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                    </Link>
+                                </Button>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-dashed border-slate-200 bg-slate-50/50">
+                            <CardContent className="flex flex-col items-center justify-center py-10 text-center">
+                                <div className="w-12 h-12 rounded-full bg-white border border-slate-100 flex items-center justify-center mb-4">
+                                    <ShieldCheck className="w-6 h-6 text-slate-300" />
+                                </div>
+                                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                    Gestión de Papeletas Online
+                                </p>
+                                <p className="text-[10px] text-slate-400 mt-1">
+                                    Estamos trabajando para que pronto puedas solicitar tu papeleta desde aquí.
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+            </>
+        );
+    }
 
     // Cálculos de Tesorería
     const totalRecibos = recibos.length;
@@ -69,8 +146,8 @@ export default function DashboardSummaryPage() {
             color: 'bg-emerald-500'
         }))
     ]
-        .filter(act => act.date) // Solo actividades con fecha
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .filter(act => act.date)
+        .sort((a, b) => b.date.getTime() - a.date.getTime())
         .slice(0, 5);
 
     const modules = [
@@ -113,99 +190,112 @@ export default function DashboardSummaryPage() {
     ];
 
     return (
-        <div className="space-y-8">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight">Panel de Control</h1>
-                <p className="text-muted-foreground underline-offset-4">
-                    Datos sincronizados en tiempo real con la base de datos de la Hermandad.
-                </p>
-            </div>
+        <>
+            <title>Panel de Control | Gestión de Hermandad</title>
+            <meta name="description" content="Dashboard administrativo con estadísticas en tiempo real y accesos directos a los módulos de gestión." />
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                {modules.map((module) => (
-                    <Card key={module.title} className="hover:shadow-lg transition-all border-slate-800/50 bg-slate-900/10">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">
-                                {module.title}
+            <div className="space-y-8">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div className="flex flex-col gap-2">
+                        <h1 className="text-4xl font-black tracking-tighter text-slate-900 leading-none">Panel de Control</h1>
+                        <p className="text-slate-500 font-medium tracking-tight">
+                            Datos sincronizados en tiempo real con la base de datos de la Hermandad.
+                        </p>
+                    </div>
+                    {temporadaActiva && (
+                        <Badge className="w-fit h-10 px-4 rounded-xl bg-primary/10 text-primary border-primary/20 text-lg font-black tracking-tighter shadow-sm flex items-center gap-2">
+                            <CalendarDays className="w-5 h-5" />
+                            {temporadaActiva.nombre} ({temporadaActiva.anio})
+                        </Badge>
+                    )}
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                    {modules.map((module) => (
+                        <Card key={module.title} className="hover:shadow-lg transition-all border-slate-200" id={`dash-module-${module.title.toLowerCase()}`}>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">
+                                    {module.title}
+                                </CardTitle>
+                                <div className={`p-2 rounded-lg ${module.bg}`}>
+                                    <module.icon className={`h-4 w-4 ${module.color}`} />
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold mb-1">{module.stats}</div>
+                                <p className="text-xs text-muted-foreground mb-4">
+                                    {module.description}
+                                </p>
+                                <Button asChild variant="ghost" className="w-full justify-between" id={`btn-dash-entrar-${module.title.toLowerCase()}`}>
+                                    <Link href={module.href}>
+                                        Entrar <ArrowRight className="h-4 w-4" />
+                                    </Link>
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+
+                <div className="grid gap-6 md:grid-cols-2">
+                    <Card className="border-slate-200" id="dash-recent-activity">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Clock className="w-5 h-5 text-amber-500" />
+                                Actividad Reciente
                             </CardTitle>
-                            <div className={`p-2 rounded-lg ${module.bg}`}>
-                                <module.icon className={`h-4 w-4 ${module.color}`} />
-                            </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold mb-1">{module.stats}</div>
-                            <p className="text-xs text-muted-foreground mb-4">
-                                {module.description}
-                            </p>
-                            <Button asChild variant="ghost" className="w-full justify-between hover:bg-slate-800">
-                                <Link href={module.href}>
-                                    Entrar <ArrowRight className="h-4 w-4" />
-                                </Link>
-                            </Button>
+                            <div className="space-y-4">
+                                {recentActivities.length > 0 ? (
+                                    recentActivities.map((act) => (
+                                        <div key={act.id} className="flex items-center gap-4 text-sm">
+                                            <div className={`w-2 h-2 rounded-full ${act.color}`} />
+                                            <div className="flex-1">
+                                                <p className="font-medium text-slate-700">{act.title}</p>
+                                                <p className="text-xs text-muted-foreground capitalize">
+                                                    {formatDistanceToNow(act.date, { addSuffix: true, locale: es })}
+                                                </p>
+                                            </div>
+                                            <Badge variant="outline">{act.module}</Badge>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p className="text-sm text-muted-foreground text-center py-4">No hay actividad reciente.</p>
+                                )}
+                            </div>
                         </CardContent>
                     </Card>
-                ))}
-            </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
-                <Card className="border-slate-800/50">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Clock className="w-5 h-5 text-amber-500" />
-                            Actividad Reciente
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            {recentActivities.length > 0 ? (
-                                recentActivities.map((act) => (
-                                    <div key={act.id} className="flex items-center gap-4 text-sm">
-                                        <div className={`w-2 h-2 rounded-full ${act.color}`} />
-                                        <div className="flex-1">
-                                            <p className="font-medium text-slate-200">{act.title}</p>
-                                            <p className="text-xs text-muted-foreground capitalize">
-                                                {formatDistanceToNow(act.date, { addSuffix: true, locale: es })}
-                                            </p>
-                                        </div>
-                                        <Badge variant="outline">{act.module}</Badge>
-                                    </div>
-                                ))
-                            ) : (
-                                <p className="text-sm text-muted-foreground text-center py-4">No hay actividad reciente.</p>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-slate-800/50 bg-gradient-to-br from-slate-900/50 to-slate-800/20">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <ShieldCheck className="w-5 h-5 text-primary" />
-                            Estado del Sistema
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-muted-foreground">Sincronización Cloud</span>
-                                <Badge variant={isSyncing ? 'warning' : 'success'}>
-                                    {isSyncing ? 'Sincronizando...' : 'Activa'}
-                                </Badge>
+                    <Card className="border-slate-200 bg-slate-50/50" id="dash-system-status">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <ShieldCheck className="w-5 h-5 text-primary" />
+                                Estado del Sistema
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground">Sincronización Cloud</span>
+                                    <Badge variant={isSyncing ? 'warning' : 'success'}>
+                                        {isSyncing ? 'Sincronizando...' : 'Activa'}
+                                    </Badge>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground">Base de Datos Local</span>
+                                    <Badge variant="success">Versión 4 OK</Badge>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground">Cola de Pendientes</span>
+                                    <span className={`font-mono font-bold ${pendingSyncCount > 0 ? 'text-amber-500' : 'text-primary'}`}>
+                                        {pendingSyncCount} cambios {pendingSyncCount > 0 ? 'pendientes' : ''}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-muted-foreground">Base de Datos Local</span>
-                                <Badge variant="success">Versión 4 OK</Badge>
-                            </div>
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-muted-foreground">Cola de Pendientes</span>
-                                <span className={`font-mono ${pendingSyncCount > 0 ? 'text-amber-500' : 'text-primary'}`}>
-                                    {pendingSyncCount} cambios {pendingSyncCount > 0 ? 'pendientes' : ''}
-                                </span>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
-        </div>
+        </>
     );
 }
