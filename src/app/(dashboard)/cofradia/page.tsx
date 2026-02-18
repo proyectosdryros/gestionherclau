@@ -9,8 +9,10 @@ import { usePapeletas } from '@/presentation/hooks/usePapeletas';
 import { useHermanos } from '@/presentation/hooks/useHermanos';
 import { Modal } from '@/presentation/components/ui/Modal';
 import { Input } from '@/presentation/components/ui/Input';
+import { useRouter } from 'next/navigation';
 
 export default function CofradiaPage() {
+    const router = useRouter();
     const { papeletas, crearPapeleta } = usePapeletas();
     const { hermanos } = useHermanos();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
