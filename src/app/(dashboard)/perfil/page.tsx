@@ -170,7 +170,7 @@ export default function PerfilPage() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="flex flex-col items-center py-4">
-                                <div className="text-6xl font-black tracking-tighter text-slate-900">{miPerfil.getAntiguedad().years}</div>
+                                <div className="text-6xl font-black tracking-tighter text-slate-900">{miPerfil.getAntiguedad().getAños()}</div>
                                 <p className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mt-1">Años</p>
                             </CardContent>
                         </Card>
