@@ -1,6 +1,6 @@
 {
     "name": "gestion-hermandades",
-    "version": "1.6.07",
+    "version": "1.6.08",
     "private": true,
     "scripts": {
         "dev": "next dev",

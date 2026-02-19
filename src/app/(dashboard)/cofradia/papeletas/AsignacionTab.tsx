@@ -64,9 +64,9 @@ export default function AsignacionTab() {
                 if (hermanoIdsAsignados.has(p.hermanoId)) return false;
 
                 if (!modoLibre) {
-                    // Modo estricto: la papeleta debe ser del mismo tramo, o sin tramo asignado
+                    // Modo estricto: SOLO papeletas con el tramoid exacto de este tramo
                     const tramoidPapeleta = (p as any).tramoid as string | null | undefined;
-                    if (tramoidPapeleta && tramoidPapeleta !== tramoId) return false;
+                    if (!tramoidPapeleta || tramoidPapeleta !== tramoId) return false;
                 }
                 return true;
             })
