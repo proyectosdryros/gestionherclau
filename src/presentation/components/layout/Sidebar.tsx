@@ -19,7 +19,9 @@ import {
     Menu,
     X,
     CalendarDays,
-    UserCircle
+    UserCircle,
+    Ticket,
+    BarChart3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRole } from '@/presentation/hooks/useRole';

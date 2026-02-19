@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/presentation/components/ui/Card';
 import { Button } from '@/presentation/components/ui/Button';
-import { Users, UserCheck, Settings, Wand2, ArrowRightLeft, Plus, Tag, ShoppingCart } from 'lucide-react';
+import { Users, UserCheck, Settings, Wand2, ArrowRightLeft, Plus, Ticket } from 'lucide-react';
 import { usePapeletas } from '@/presentation/hooks/usePapeletas';
 import { useHermanos } from '@/presentation/hooks/useHermanos';
 import { Modal } from '@/presentation/components/ui/Modal';
