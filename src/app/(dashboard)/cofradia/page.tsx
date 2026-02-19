@@ -186,36 +186,6 @@ export default function CofradiaPage() {
                 </Card>
             </div>
 
-            <Card className="border-slate-800">
-                <CardHeader>
-                    <CardTitle>Cortejo Procesional</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-8">
-                        {['Tramo de Cristo', 'Tramo de Virgen'].map((seccion) => (
-                            <div key={seccion} className="space-y-4">
-                                <h3 className="text-lg font-semibold border-l-4 border-primary pl-3">{seccion}</h3>
-                                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                    {[1, 2, 3, 4].map((i) => (
-                                        <div key={i} className="flex items-center justify-between p-3 rounded-lg border bg-muted/20 hover:bg-muted/30 transition-shadow cursor-pointer">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold">
-                                                    {i}
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-medium">Puesto {i}</p>
-                                                    <p className="text-xs text-muted-foreground">Sin asignar</p>
-                                                </div>
-                                            </div>
-                                            <Button variant="ghost" size="sm" className="text-xs">Asignar</Button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
 
             <Modal
                 isOpen={isCreateModalOpen}

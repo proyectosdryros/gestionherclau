@@ -4,7 +4,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/presentation/components/ui/Tabs';
 import { Button } from '@/presentation/components/ui/Button';
-import { ArrowLeft, Loader2, Tag, List, Ticket } from 'lucide-react';
+import { ArrowLeft, Loader2, Tag, List, Ticket, UserCheck } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 // Importamos los componentes de las vistas anteriores (o su lógica)
@@ -18,6 +18,7 @@ import VentaPapeletasContent from '../ventas/page';
 import ListadoComponent from './ListadoTab';
 import VentaComponent from './VentaTab';
 import CortejoComponent from './CortejoTab';
+import AsignacionComponent from './AsignacionTab';
 
 function GestionPapeletasContent() {
     const router = useRouter();
@@ -39,15 +40,18 @@ function GestionPapeletasContent() {
             </div>
 
             <Tabs defaultValue="listado" value={activeTab} onValueChange={setActiveTab} className="bg-white p-2 rounded-3xl border border-slate-100 shadow-sm">
-                <TabsList className="grid grid-cols-3 bg-slate-50 p-1 rounded-2xl h-14">
-                    <TabsTrigger value="listado" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold gap-2">
-                        <List className="w-4 h-4" /> Listado General
+                <TabsList className="grid grid-cols-4 bg-slate-50 p-1 rounded-2xl h-14">
+                    <TabsTrigger value="listado" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold gap-2 text-xs">
+                        <List className="w-4 h-4" /> Listado
                     </TabsTrigger>
-                    <TabsTrigger value="ventas" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold gap-2">
-                        <Tag className="w-4 h-4" /> Nueva Venta (TPV)
+                    <TabsTrigger value="ventas" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold gap-2 text-xs">
+                        <Tag className="w-4 h-4" /> Venta/TPV
                     </TabsTrigger>
-                    <TabsTrigger value="cortejo" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold gap-2">
-                        <Ticket className="w-4 h-4" /> Configuración Cortejo
+                    <TabsTrigger value="cortejo" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold gap-2 text-xs">
+                        <Ticket className="w-4 h-4" /> Diseño
+                    </TabsTrigger>
+                    <TabsTrigger value="asignacion" className="rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold gap-2 text-xs">
+                        <UserCheck className="w-4 h-4" /> Asignación
                     </TabsTrigger>
                 </TabsList>
 
@@ -65,6 +69,11 @@ function GestionPapeletasContent() {
                     <TabsContent value="cortejo">
                         <Suspense fallback={<div className="flex h-96 items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
                             <CortejoComponent />
+                        </Suspense>
+                    </TabsContent>
+                    <TabsContent value="asignacion">
+                        <Suspense fallback={<div className="flex h-96 items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+                            <AsignacionComponent />
                         </Suspense>
                     </TabsContent>
                 </div>
