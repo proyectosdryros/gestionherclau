@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -17,6 +16,11 @@ export default function AsignacionTab() {
     const { hermanos, loading: loadingHermanos } = useHermanos();
     const [search, setSearch] = useState('');
     const [selectedPapeletaId, setSelectedPapeletaId] = useState<string | null>(null);
+
+    const getHermanoName = (id: string) => {
+        const h = hermanos.find(hermano => hermano.id === id);
+        return h ? `${h.nombre} ${h.apellido1}` : 'Desconocido';
+    };
 
     const loading = loadingCortejo || loadingPapeletas || loadingHermanos;
 
@@ -80,10 +84,10 @@ export default function AsignacionTab() {
                                         onClick={() => setSelectedPapeletaId(isSelected ? null : p.id)}
                                         disabled={isAssigned}
                                         className={`w-full p-4 rounded-2xl border-2 transition-all flex items-center justify-between group ${isSelected
-                                                ? 'border-slate-900 bg-slate-900 text-white shadow-lg'
-                                                : isAssigned
-                                                    ? 'opacity-40 bg-slate-50 border-transparent grayscale'
-                                                    : 'border-slate-100 bg-slate-50 hover:border-slate-300'
+                                            ? 'border-slate-900 bg-slate-900 text-white shadow-lg'
+                                            : isAssigned
+                                                ? 'opacity-40 bg-slate-50 border-transparent grayscale'
+                                                : 'border-slate-100 bg-slate-50 hover:border-slate-300'
                                             }`}
                                     >
                                         <div className="text-left">
@@ -144,61 +148,62 @@ export default function AsignacionTab() {
                                     </div>
 
                                     <div className="flex flex-col gap-4 items-center">
-                                        {sub.elementos.map((elem) => (
-                                            <div key={elem.id} className="w-full max-w-md space-y-2">
-                                                {elem.tipo === 'INSIGNIA' ? (
-                                                    <div className="p-4 bg-amber-50 rounded-2xl border-2 border-amber-200 flex items-center gap-4">
-                                                        <Disc className="w-6 h-6 text-amber-600" />
-                                                        <span className="font-black text-slate-900 uppercase italic">{elem.nombre}</span>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex gap-4">
-                                                        {elem.posiciones.map((pos) => {
-                                                            const asignado = pos.hermanoId ? hermanos.find(h => h.id === pos.hermanoId) : null;
-                                                            return (
-                                                                <button
-                                                                    key={pos.id}
-                                                                    disabled={!selectedPapeletaId && !pos.hermanoId}
-                                                                    onClick={() => {
-                                                                        if (selectedPapeletaId && selectedHermano) {
-                                                                            asignarHermano(tIdx, sIdx, elem.id, pos.id, selectedHermano.id, selectedPapeletaId);
-                                                                            setSelectedPapeletaId(null);
-                                                                        }
-                                                                    }}
-                                                                    className={`flex-1 h-20 rounded-2xl border-2 flex flex-col items-center justify-center relative transition-all shadow-sm ${pos.hermanoId
-                                                                            ? 'bg-slate-900 border-slate-900 text-white'
-                                                                            : selectedPapeletaId
-                                                                                ? 'bg-white border-amber-400 border-dashed hover:border-amber-600 hover:bg-amber-50 cursor-pointer'
-                                                                                : 'bg-white border-slate-100 opacity-50 cursor-default'
-                                                                        }`}
-                                                                >
-                                                                    {pos.hermanoId ? (
-                                                                        <>
-                                                                            <UserCheck className="w-5 h-5 mb-1" />
-                                                                            <span className="text-[8px] font-black uppercase text-center px-2 truncate w-full">
-                                                                                {asignado?.nombre} {asignado?.apellido1}
-                                                                            </span>
-                                                                            <button
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    asignarHermano(tIdx, sIdx, elem.id, pos.id, null as any, null as any);
-                                                                                }}
-                                                                                className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 shadow-md"
-                                                                            >
-                                                                                <X className="w-3 h-3" />
-                                                                            </button>
-                                                                        </>
-                                                                    ) : (
-                                                                        <>
-                                                                            <Ghost className="w-6 h-6 text-slate-300 mb-1" />
-                                                                            <span className="text-[10px] font-black text-slate-900 uppercase tracking-tighter italic">Hueco Libre</span>
-                                                                        </>
-                                                                    )}
-                                                                </button>
-                                                            )
-                                                        })}
-                                                    </div>
-                                                )}
+                                        {sub.elementos.map((elem, eIdx) => (
+                                            <div key={elem.id} className="w-full space-y-3">
+                                                <div className="flex items-center gap-3 px-2">
+                                                    <div className={`w-1 h-4 rounded-full ${elem.tipo === 'INSIGNIA' ? 'bg-amber-400' : elem.tipo === 'PASO' ? 'bg-purple-500' : 'bg-slate-300'}`} />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic">
+                                                        {elem.tipo === 'INSIGNIA' ? 'Insignia' : elem.tipo === 'PASO' ? 'Paso de Hermandad' : 'Fila de Nazarenos'}
+                                                    </span>
+                                                </div>
+
+                                                <div className="flex gap-3">
+                                                    {elem.posiciones.map((pos) => (
+                                                        <button
+                                                            key={pos.id}
+                                                            disabled={!selectedPapeletaId && !pos.hermanoId}
+                                                            onClick={() => {
+                                                                if (pos.hermanoId) {
+                                                                    asignarHermano(tIdx, sIdx, elem.id, pos.id, '', '');
+                                                                } else if (selectedPapeletaId && selectedHermano) {
+                                                                    asignarHermano(tIdx, sIdx, elem.id, pos.id, selectedHermano.id, selectedPapeletaId);
+                                                                    setSelectedPapeletaId(null);
+                                                                }
+                                                            }}
+                                                            className={`flex-1 h-20 rounded-2xl border-2 flex flex-col items-center justify-center relative transition-all shadow-sm ${pos.hermanoId
+                                                                ? 'bg-slate-900 border-slate-900 text-white'
+                                                                : selectedPapeletaId
+                                                                    ? 'bg-white border-amber-400 border-dashed hover:border-amber-600 hover:bg-amber-50 cursor-pointer animate-pulse'
+                                                                    : 'bg-white border-slate-100 opacity-50 cursor-default'
+                                                                }`}
+                                                        >
+                                                            {pos.hermanoId ? (
+                                                                <>
+                                                                    <UserCheck className="w-6 h-6 mb-1 text-amber-400" />
+                                                                    <span className="text-[10px] font-black uppercase tracking-tighter truncate w-full px-2">
+                                                                        {getHermanoName(pos.hermanoId)}
+                                                                    </span>
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            asignarHermano(tIdx, sIdx, elem.id, pos.id, '', '');
+                                                                        }}
+                                                                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center shadow-lg hover:scale-110"
+                                                                    >
+                                                                        <X className="w-3 h-3 text-white" />
+                                                                    </button>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    {elem.tipo === 'INSIGNIA' ? <Disc className="w-6 h-6 text-slate-200" /> : <Ghost className="w-6 h-6 text-slate-200" />}
+                                                                    <span className="text-[9px] font-bold text-slate-400 uppercase mt-1">
+                                                                        {pos.nombrePuesto}
+                                                                    </span>
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    ))}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>

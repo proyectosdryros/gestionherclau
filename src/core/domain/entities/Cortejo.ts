@@ -1,5 +1,5 @@
 
-export type TipoElementoCortejo = 'INSIGNIA' | 'FILA_NAZARENOS';
+export type TipoElementoCortejo = 'INSIGNIA' | 'FILA_NAZARENOS' | 'PASO';
 
 export interface PosicionCortejo {
     id: string;

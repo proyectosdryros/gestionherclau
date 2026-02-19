@@ -22,40 +22,80 @@ export function useCortejo(temporada: number = 2025) {
 
         const tramos: TramoCortejo[] = nombresTramos.map((nombre, index) => {
             const tramoId = uuidv4();
+            const subtramos: SubtramoCortejo[] = [];
 
-            // Subtramo inicial (X.1)
-            const subtramo: SubtramoCortejo = {
-                id: uuidv4(),
-                numero: `${index}.1`,
-                elementos: []
-            };
-
-            // Añadir Insignia inicial del tramo
-            subtramo.elementos.push({
-                id: uuidv4(),
-                tipo: 'INSIGNIA',
-                nombre: index === 0 ? 'Cruz de Guía' : `Insignia de Tramo ${index}`,
-                posiciones: [{ id: uuidv4(), hermanoId: null, papeletaId: null, nombrePuesto: 'Portador' }]
-            });
-
-            // Añadir 10 filas de nazarenos
-            for (let i = 1; i <= 10; i++) {
-                subtramo.elementos.push({
+            // Tramo 0: Cruz de Guía + Faroles solamente
+            if (index === 0) {
+                const sub0: SubtramoCortejo = {
                     id: uuidv4(),
-                    tipo: 'FILA_NAZARENOS',
-                    nombre: `Fila ${i}`,
-                    posiciones: [
-                        { id: uuidv4(), hermanoId: null, papeletaId: null, nombrePuesto: 'Izquierda' },
-                        { id: uuidv4(), hermanoId: null, papeletaId: null, nombrePuesto: 'Derecha' }
+                    numero: '0.1',
+                    elementos: [
+                        {
+                            id: uuidv4(),
+                            tipo: 'INSIGNIA',
+                            nombre: 'Cruz de Guía',
+                            posiciones: [{ id: uuidv4(), hermanoId: null, papeletaId: null, nombrePuesto: 'Portador' }]
+                        },
+                        {
+                            id: uuidv4(),
+                            tipo: 'INSIGNIA',
+                            nombre: 'Farol de Guía (Izq)',
+                            posiciones: [{ id: uuidv4(), hermanoId: null, papeletaId: null, nombrePuesto: 'Portador' }]
+                        },
+                        {
+                            id: uuidv4(),
+                            tipo: 'INSIGNIA',
+                            nombre: 'Farol de Guía (Der)',
+                            posiciones: [{ id: uuidv4(), hermanoId: null, papeletaId: null, nombrePuesto: 'Portador' }]
+                        }
                     ]
+                };
+                subtramos.push(sub0);
+            } else {
+                // Tramos 1-3: Insignia tramo -> 10 filas -> Paso final
+                const sub1: SubtramoCortejo = {
+                    id: uuidv4(),
+                    numero: `${index}.1`,
+                    elementos: []
+                };
+
+                // Insignia inicial
+                sub1.elementos.push({
+                    id: uuidv4(),
+                    tipo: 'INSIGNIA',
+                    nombre: `Insignia de Tramo ${index}`,
+                    posiciones: [{ id: uuidv4(), hermanoId: null, papeletaId: null, nombrePuesto: 'Portador' }]
                 });
+
+                // 10 filas de nazarenos
+                for (let i = 1; i <= 10; i++) {
+                    sub1.elementos.push({
+                        id: uuidv4(),
+                        tipo: 'FILA_NAZARENOS',
+                        nombre: `Fila ${i}`,
+                        posiciones: [
+                            { id: uuidv4(), hermanoId: null, papeletaId: null, nombrePuesto: 'Izquierda' },
+                            { id: uuidv4(), hermanoId: null, papeletaId: null, nombrePuesto: 'Derecha' }
+                        ]
+                    });
+                }
+
+                // Paso Final (Siempre al final para que los nazarenos vayan delante)
+                sub1.elementos.push({
+                    id: uuidv4(),
+                    tipo: 'PASO',
+                    nombre: nombre,
+                    posiciones: [{ id: uuidv4(), hermanoId: null, papeletaId: null, nombrePuesto: 'Paso' }]
+                });
+
+                subtramos.push(sub1);
             }
 
             return {
                 id: tramoId,
                 numero: index,
                 nombre,
-                subtramos: [subtramo]
+                subtramos
             };
         });
 
@@ -90,7 +130,11 @@ export function useCortejo(temporada: number = 2025) {
         const newStructure = { ...structure };
         const elementos = newStructure.tramos[tramoIndex].subtramos[subtramoIndex].elementos;
 
-        elementos.push({
+        // Insertar filas antes del paso si existe
+        const pasoIndex = elementos.findIndex(e => e.tipo === 'PASO');
+        const insertPosition = pasoIndex !== -1 ? pasoIndex : elementos.length;
+
+        elementos.splice(insertPosition, 0, {
             id: uuidv4(),
             tipo: 'FILA_NAZARENOS',
             nombre: `Fila ${elementos.filter(e => e.tipo === 'FILA_NAZARENOS').length + 1}`,
@@ -107,33 +151,44 @@ export function useCortejo(temporada: number = 2025) {
         if (!structure) return;
         const newStructure = { ...structure };
         const subtramo = newStructure.tramos[tramoIndex].subtramos[subtramoIndex];
+        const elementoIndex = subtramo.elementos.findIndex(e => e.id === elementoId);
 
-        subtramo.elementos = subtramo.elementos.filter(e => e.id !== elementoId);
+        if (elementoIndex === -1) return;
+        const elemento = subtramo.elementos[elementoIndex];
+
+        // Si es una insignia y no es la primera, debemos gestionar la unión del subtramo 
+        // o si es un subtramo dedicado, borrarlo (esto se refinará al implementar los subtramos reales)
+        subtramo.elementos.splice(elementoIndex, 1);
 
         saveStructure(newStructure);
     };
 
-    const addInsignia = (tramoIndex: number) => {
+    const addInsignia = (tramoIndex: number, subtramoIndex: number, indexAt: number, nombre: string, varas: number) => {
         if (!structure) return;
         const newStructure = { ...structure };
-        const tramo = newStructure.tramos[tramoIndex];
+        const subtramoActual = newStructure.tramos[tramoIndex].subtramos[subtramoIndex];
 
-        // Crear nuevo subtramo
-        const nuevoNumero = `${tramo.numero}.${tramo.subtramos.length + 1}`;
-        const nuevoSubtramo: SubtramoCortejo = {
+        const posiciones: PosicionCortejo[] = [
+            { id: uuidv4(), hermanoId: null, papeletaId: null, nombrePuesto: 'Portador' }
+        ];
+
+        for (let i = 1; i <= varas; i++) {
+            posiciones.push({ id: uuidv4(), hermanoId: null, papeletaId: null, nombrePuesto: `Vara ${i}` });
+        }
+
+        const nuevaInsignia: ElementoCortejo = {
             id: uuidv4(),
-            numero: nuevoNumero,
-            elementos: [
-                {
-                    id: uuidv4(),
-                    tipo: 'INSIGNIA',
-                    nombre: 'Nueva Insignia',
-                    posiciones: [{ id: uuidv4(), hermanoId: null, papeletaId: null, nombrePuesto: 'Portador' }]
-                }
-            ]
+            tipo: 'INSIGNIA',
+            nombre,
+            posiciones
         };
 
-        tramo.subtramos.push(nuevoSubtramo);
+        // Insertar en la posición deseada
+        subtramoActual.elementos.splice(indexAt, 0, nuevaInsignia);
+
+        // TODO: En una implementación más compleja, esto dividiría el subtramo en dos.
+        // Por ahora, lo mantenemos como elementos ordenados dentro del subtramo.
+
         saveStructure(newStructure);
     };
 

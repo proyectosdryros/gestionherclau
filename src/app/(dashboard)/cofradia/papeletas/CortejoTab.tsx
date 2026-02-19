@@ -1,109 +1,208 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useCortejo } from '@/presentation/hooks/useCortejo';
 import { Card } from '@/presentation/components/ui/Card';
 import { Button } from '@/presentation/components/ui/Button';
-import { Plus, Ghost, Star, Disc, Trash2, RotateCcw } from 'lucide-react';
+import { Plus, Ghost, Star, Disc, Trash2, RotateCcw, RefreshCw, User } from 'lucide-react';
 import { Badge } from '@/presentation/components/ui/Badge';
+import { Modal } from '@/presentation/components/ui/Modal';
+import { Input } from '@/presentation/components/ui/Input';
 
 export default function CortejoTab() {
     const { structure, loading, addFila, addInsignia, removeElemento, resetCortejo } = useCortejo();
+    const [isInsigniaModalOpen, setIsInsigniaModalOpen] = useState(false);
+    const [insigniaData, setInsigniaData] = useState({ tramoIdx: 0, subIdx: 0, insertAt: 0, nombre: '', varas: 0 });
 
-    if (loading) return <div className="p-8 text-center text-slate-400">Cargando Estructura...</div>;
+    if (loading) return <div className="p-8 text-center text-slate-400 italic">Sincronizando Estructura...</div>;
+
+    const handleAddInsignia = () => {
+        addInsignia(insigniaData.tramoIdx, insigniaData.subIdx, insigniaData.insertAt, insigniaData.nombre, insigniaData.varas);
+        setIsInsigniaModalOpen(false);
+        setInsigniaData({ tramoIdx: 0, subIdx: 0, insertAt: 0, nombre: '', varas: 0 });
+    };
 
     return (
-        <div className="space-y-12 pb-20">
+        <div className="space-y-8 pb-20">
             {/* Header / Actions */}
-            <div className="flex justify-between items-center bg-slate-50 p-6 rounded-3xl border border-slate-100">
+            <div className="flex justify-between items-center bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
                 <div>
-                    <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter italic">Composición del Cortejo</h2>
-                    <p className="text-xs font-bold text-slate-900 uppercase tracking-widest mt-1">Temporada {structure?.temporada}</p>
+                    <h2 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter">Diseño del Cortejo</h2>
+                    <p className="text-sm text-slate-500 font-bold">Configura los tramos, insignias y número de filas.</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => {
-                    if (confirm('¿Deseas resetear el cortejo al estado base? Se perderán las personalizaciones.')) resetCortejo();
-                }} className="rounded-xl border-slate-200 text-slate-900 hover:text-red-500 font-bold gap-2 bg-white">
-                    <RotateCcw className="w-4 h-4" /> REINICIAR BASE
+                <Button
+                    variant="outline"
+                    onClick={() => {
+                        if (confirm('¿Deseas resetear el cortejo al estado base? Se perderán las personalizaciones.')) resetCortejo();
+                    }}
+                    className="rounded-2xl border-red-100 text-red-600 hover:bg-red-50 font-black uppercase text-[10px] tracking-widest"
+                >
+                    <RefreshCw className="w-3 h-3 mr-2" /> Reiniciar Base
                 </Button>
             </div>
 
-            <div className="grid gap-12">
+            <div className="space-y-12">
                 {structure?.tramos.map((tramo, tIdx) => (
-                    <section key={tramo.id} className="space-y-6">
-                        <div className="flex items-center justify-between px-2">
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center text-white font-black text-xl italic shadow-lg shadow-slate-900/20">
-                                    {tramo.numero}
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-black text-slate-900 leading-none uppercase italic tracking-tighter">{tramo.nombre}</h3>
-                                    <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest mt-1">Tramo de Penitencia</p>
-                                </div>
+                    <Card key={tramo.id} className="border-none shadow-none bg-transparent space-y-6">
+                        <div className="flex items-center gap-4 px-2">
+                            <div className="w-12 h-12 rounded-[1.25rem] bg-slate-900 flex items-center justify-center text-white font-black italic shadow-lg shadow-slate-900/20 text-lg">
+                                {tramo.numero}
                             </div>
-                            <Button onClick={() => addInsignia(tIdx)} variant="outline" size="sm" className="rounded-xl border-slate-300 font-bold bg-white shadow-sm hover:shadow-md transition-all gap-2 text-slate-900">
-                                <Star className="w-4 h-4 text-amber-500" /> AÑADIR INSIGNIA
-                            </Button>
+                            <div>
+                                <h3 className="text-2xl font-black text-slate-900 uppercase italic tracking-tighter leading-none">{tramo.nombre}</h3>
+                                <Badge className="mt-1 bg-slate-100 text-slate-600 border-none font-bold text-[10px] uppercase">{tramo.subtramos.length} Subtramos</Badge>
+                            </div>
                         </div>
 
-                        {tramo.subtramos.map((sub, sIdx) => (
-                            <div key={sub.id} className="space-y-4">
-                                <div className="flex items-center gap-3">
-                                    <Badge className="bg-slate-200 text-black rounded-lg text-xs border-none font-black px-4 py-1.5 shadow-sm">
-                                        SUBTRAMO {sub.numero}
-                                    </Badge>
-                                    <div className="h-[2px] flex-1 bg-slate-100" />
-                                </div>
+                        <div className="space-y-6">
+                            {tramo.subtramos.map((sub, sIdx) => (
+                                <div key={sub.id} className="relative bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm">
+                                    <div className="absolute -top-3 left-10">
+                                        <Badge className="bg-slate-900 text-white rounded-xl text-[10px] font-black px-6 py-1.5 shadow-md uppercase tracking-widest italic border-none">
+                                            Subtramo {sub.numero}
+                                        </Badge>
+                                    </div>
 
-                                <div className="flex flex-col gap-6 items-center max-w-xl mx-auto py-4">
-                                    {sub.elementos.map((elem) => (
-                                        <div key={elem.id} className="group relative w-full flex justify-center">
-                                            {elem.tipo === 'INSIGNIA' ? (
-                                                <Card className="border-amber-200 bg-amber-50 shadow-sm rounded-3xl p-5 flex items-center justify-between w-full max-w-md border-2">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-14 h-14 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-700 shadow-inner border border-amber-200">
-                                                            <Disc className="w-8 h-8" />
+                                    <div className="flex flex-col gap-6 items-center">
+                                        {/* Botón de inserción inicial */}
+                                        <button
+                                            onClick={() => {
+                                                setInsigniaData({ ...insigniaData, tramoIdx: tIdx, subIdx: sIdx, insertAt: 0 });
+                                                setIsInsigniaModalOpen(true);
+                                            }}
+                                            className="group flex items-center gap-2 text-[10px] font-black text-slate-300 hover:text-amber-500 transition-all uppercase tracking-widest"
+                                        >
+                                            <div className="h-[2px] w-8 bg-slate-100 group-hover:bg-amber-100" />
+                                            <Plus className="w-3 h-3" /> Insertar Insignia
+                                            <div className="h-[2px] w-8 bg-slate-100 group-hover:bg-amber-100" />
+                                        </button>
+
+                                        {sub.elementos.map((elem, eIdx) => (
+                                            <React.Fragment key={elem.id}>
+                                                <div className="w-full max-w-sm relative group">
+                                                    <button
+                                                        onClick={() => removeElemento(tIdx, sIdx, elem.id)}
+                                                        className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center shadow-lg hover:scale-110 z-10"
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </button>
+
+                                                    {elem.tipo === 'INSIGNIA' ? (
+                                                        <div className="p-6 bg-amber-50 rounded-[2rem] border-2 border-amber-200 shadow-sm flex flex-col items-center gap-2 group-hover:scale-[1.02] transition-transform">
+                                                            <div className="flex items-center gap-3">
+                                                                <Disc className="w-6 h-6 text-amber-600" />
+                                                                <span className="text-sm font-black text-slate-900 uppercase italic tracking-tighter">{elem.nombre}</span>
+                                                            </div>
+                                                            {elem.posiciones.length > 1 && (
+                                                                <div className="flex gap-2 mt-2">
+                                                                    {elem.posiciones.slice(1).map((_, vIdx) => (
+                                                                        <div key={vIdx} className="w-6 h-6 rounded-full bg-amber-200 flex items-center justify-center">
+                                                                            <Disc className="w-3 h-3 text-amber-600" />
+                                                                        </div>
+                                                                    ))}
+                                                                    <span className="text-[8px] font-bold text-amber-600 uppercase">+{elem.posiciones.length - 1} Varas</span>
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        <div>
-                                                            <p className="text-[10px] font-black text-amber-800 uppercase tracking-widest">Insignia</p>
-                                                            <p className="font-black text-slate-900 text-xl leading-none italic">{elem.nombre}</p>
+                                                    ) : elem.tipo === 'PASO' ? (
+                                                        <div className="p-8 bg-purple-50 rounded-[2.5rem] border-4 border-purple-200 shadow-lg flex flex-col items-center gap-3">
+                                                            <div className="w-20 h-[2px] bg-purple-300 mb-2" />
+                                                            <span className="text-xl font-black text-purple-900 uppercase italic tracking-tighter">PASO DE {elem.nombre}</span>
+                                                            <div className="w-20 h-[2px] bg-purple-300 mt-2" />
                                                         </div>
-                                                    </div>
-                                                </Card>
-                                            ) : (
-                                                <div className="flex gap-8 w-full max-w-md justify-center">
-                                                    {elem.posiciones.map((pos) => (
-                                                        <div key={pos.id} className="flex-1 h-20 bg-white border-2 border-slate-200 rounded-2xl flex items-center justify-center relative hover:border-slate-400 transition-all shadow-sm group-hover:shadow-md overflow-hidden">
-                                                            <Ghost className="w-7 h-7 text-slate-300 opacity-50" />
-                                                            <span className="text-[10px] absolute bottom-2 font-black text-slate-900 uppercase tracking-tighter italic">NAZARENO</span>
+                                                    ) : (
+                                                        <div className="flex gap-4">
+                                                            {elem.posiciones.map((_, i) => (
+                                                                <div key={i} className="flex-1 h-20 rounded-2xl border-2 border-slate-200 bg-white flex flex-col items-center justify-center shadow-sm group-hover:border-slate-400 transition-colors">
+                                                                    <User className="w-6 h-6 text-slate-300 mb-1" />
+                                                                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-tighter italic">Nazareno {i === 0 ? 'Izq' : 'Der'}</span>
+                                                                </div>
+                                                            ))}
                                                         </div>
-                                                    ))}
+                                                    )}
                                                 </div>
-                                            )}
 
-                                            {/* Delete button (hidden by default) */}
-                                            <button
-                                                onClick={() => removeElemento(tIdx, sIdx, elem.id)}
-                                                className="absolute top-1/2 -translate-y-1/2 -right-16 w-10 h-10 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg active:scale-95 z-10 hover:bg-red-600"
-                                            >
-                                                <Trash2 className="w-5 h-5" />
-                                            </button>
-                                        </div>
-                                    ))}
+                                                {/* Botón de inserción entre elementos */}
+                                                {(elem.tipo !== 'PASO') && (
+                                                    <button
+                                                        onClick={() => {
+                                                            setInsigniaData({ ...insigniaData, tramoIdx: tIdx, subIdx: sIdx, insertAt: eIdx + 1 });
+                                                            setIsInsigniaModalOpen(true);
+                                                        }}
+                                                        className="group flex items-center gap-2 text-[10px] font-black text-slate-300 hover:text-amber-500 transition-all uppercase tracking-widest"
+                                                    >
+                                                        <div className="h-[2px] w-8 bg-slate-100 group-hover:bg-amber-100" />
+                                                        <Plus className="w-3 h-3" /> Insertar Insignia
+                                                        <div className="h-[2px] w-8 bg-slate-100 group-hover:bg-amber-100" />
+                                                    </button>
+                                                )}
+                                            </React.Fragment>
+                                        ))}
+                                    </div>
 
-                                    {/* Action to add row */}
-                                    <button
-                                        onClick={() => addFila(tIdx, sIdx)}
-                                        className="w-full max-w-md h-16 border-2 border-dashed border-slate-300 rounded-2xl flex items-center justify-center bg-slate-50/50 hover:bg-white hover:border-slate-900 hover:text-slate-900 text-slate-900 transition-all gap-3 font-black text-xs uppercase italic tracking-widest shadow-sm"
-                                    >
-                                        <Plus className="w-5 h-5 text-slate-900" /> AÑADIR FILA DE NAZARENOS
-                                    </button>
+                                    <div className="mt-8 flex justify-center">
+                                        <Button
+                                            onClick={() => addFila(tIdx, sIdx)}
+                                            className="rounded-2xl h-12 px-10 gap-2 bg-slate-900 hover:bg-black text-white font-black uppercase text-xs tracking-widest transition-all active:scale-95 shadow-xl shadow-slate-900/20"
+                                        >
+                                            <Plus className="w-4 h-4" /> Añadir Fila de Cirios
+                                        </Button>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </section>
+                            ))}
+                        </div>
+                    </Card>
                 ))}
             </div>
+
+            {/* Modal para Nueva Insignia */}
+            <Modal
+                isOpen={isInsigniaModalOpen}
+                onClose={() => setIsInsigniaModalOpen(false)}
+                title="Configurar Nueva Insignia"
+            >
+                <div className="space-y-6 pt-4 text-black">
+                    <div className="space-y-2">
+                        <label className="text-sm font-black uppercase italic tracking-tighter">Nombre de la Insignia</label>
+                        <Input
+                            placeholder="Ej: Guión de la Juventud..."
+                            className="h-12 rounded-2xl font-bold"
+                            value={insigniaData.nombre}
+                            onChange={(e) => setInsigniaData({ ...insigniaData, nombre: e.target.value })}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-black uppercase italic tracking-tighter text-slate-400">¿Cuántas varas la acompañan? (Opcional)</label>
+                        <div className="grid grid-cols-5 gap-3">
+                            {[0, 2, 4, 6].map(val => (
+                                <button
+                                    key={val}
+                                    onClick={() => setInsigniaData({ ...insigniaData, varas: val })}
+                                    className={`h-12 rounded-2xl font-black transition-all border-2 ${insigniaData.varas === val
+                                        ? 'bg-amber-50 border-amber-500 text-amber-600'
+                                        : 'bg-slate-50 border-transparent text-slate-400 hover:border-slate-200'
+                                        }`}
+                                >
+                                    {val === 0 ? 'SOLO' : val}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="flex gap-3 pt-4">
+                        <Button variant="outline" onClick={() => setIsInsigniaModalOpen(false)} className="flex-1 h-12 rounded-2xl font-bold">Cancelar</Button>
+                        <Button
+                            onClick={handleAddInsignia}
+                            disabled={!insigniaData.nombre}
+                            className="flex-1 h-12 rounded-2xl font-black uppercase tracking-widest bg-amber-500 hover:bg-amber-600 text-white"
+                        >
+                            Confirmar Inserción
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
 
             <div className="max-w-xl mx-auto p-10 bg-slate-900 rounded-[40px] border border-slate-800 text-center shadow-2xl">
                 <p className="text-xs font-black text-white uppercase tracking-widest opacity-50">Nota de Organización</p>
