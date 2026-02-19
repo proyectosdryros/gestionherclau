@@ -55,28 +55,30 @@ export default function CofradiaPage() {
                     <h1 className="text-3xl font-bold tracking-tight">Cofradía</h1>
                     <p className="text-muted-foreground">Planificación del cortejo y asignación de puestos.</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-3">
                     <Button
-                        className="gap-2 bg-green-600 hover:bg-green-700"
-                        onClick={() => window.location.href = '/cofradia/ventas'}
+                        className="h-12 px-8 gap-2 bg-slate-900 hover:bg-black text-white rounded-2xl font-black uppercase text-xs tracking-widest transition-all active:scale-95 shadow-lg shadow-slate-900/20"
+                        onClick={() => router.push('/cofradia/papeletas')}
                     >
-                        <Tag className="w-4 h-4" /> Venta de Papeletas
+                        <Ticket className="w-4 h-4" /> Gestión de Papeletas
                     </Button>
                     <Button
                         variant="outline"
-                        className="gap-2"
-                        onClick={() => window.location.href = '/cofradia/listado'}
+                        className="h-12 px-6 gap-2 rounded-2xl border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition-all"
+                        onClick={() => setIsCreateModalOpen(true)}
                     >
-                        <ShoppingCart className="w-4 h-4" /> Ver Listado Papeletas
+                        <Plus className="w-4 h-4" /> Solicitud Manual
                     </Button>
-                    <Button className="gap-2" onClick={() => setIsCreateModalOpen(true)}>
-                        <Plus className="w-4 h-4" /> Nueva Solicitud Manual
+                    <Button
+                        variant="ghost"
+                        className="h-12 px-6 gap-2 rounded-2xl font-bold text-slate-400 hover:text-primary transition-all"
+                    >
+                        <Settings className="w-4 h-4" /> Ajustes
                     </Button>
-                    <Button variant="outline" className="gap-2">
-                        <Settings className="w-4 h-4" /> Configurar Puestos
-                    </Button>
-                    <Button className="gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 border-none">
-                        <Wand2 className="w-4 h-4" /> Asignación Automática
+                    <Button
+                        className="h-12 px-8 gap-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-2xl font-black uppercase text-xs tracking-widest border border-primary/20 transition-all ml-auto"
+                    >
+                        <Wand2 className="w-4 h-4" /> Auto-Asignación
                     </Button>
                 </div>
             </div>

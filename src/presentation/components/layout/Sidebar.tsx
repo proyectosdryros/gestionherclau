@@ -56,8 +56,7 @@ const navItems = [
         adminOnly: true,
         subItems: [
             { name: 'Dashboard', href: '/cofradia' },
-            { name: 'Venta Papeletas', href: '/cofradia/ventas' },
-            { name: 'Listado', href: '/cofradia/listado' },
+            { name: 'Gestión Papeletas', href: '/cofradia/papeletas' },
         ]
     },
     { name: 'Priostía', href: '/priostia', icon: Package, adminOnly: true },
