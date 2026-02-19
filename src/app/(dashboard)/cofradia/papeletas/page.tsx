@@ -18,7 +18,7 @@ import VentaPapeletasContent from '../ventas/page';
 import ListadoComponent from './ListadoTab';
 import VentaComponent from './VentaTab';
 
-export default function GestionPapeletasPage() {
+function GestionPapeletasContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'listado');
@@ -61,5 +61,13 @@ export default function GestionPapeletasPage() {
                 </div>
             </Tabs>
         </div>
+    );
+}
+
+export default function GestionPapeletasPage() {
+    return (
+        <Suspense fallback={<div className="flex h-96 items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+            <GestionPapeletasContent />
+        </Suspense>
     );
 }
