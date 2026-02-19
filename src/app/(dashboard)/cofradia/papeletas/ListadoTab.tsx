@@ -6,7 +6,8 @@ import { Card, CardHeader, CardContent } from '@/presentation/components/ui/Card
 import { Button } from '@/presentation/components/ui/Button';
 import { usePapeletas } from '@/presentation/hooks/usePapeletas';
 import { useHermanos } from '@/presentation/hooks/useHermanos';
-import { Search, Trash2, CheckCircle2, Clock, X, Download } from 'lucide-react';
+import { useCortejo } from '@/presentation/hooks/useCortejo';
+import { Search, Trash2, CheckCircle2, Clock, X, Download, Edit3, Save } from 'lucide-react';
 import { Badge } from '@/presentation/components/ui/Badge';
 import { Input } from '@/presentation/components/ui/Input';
 import dynamic from 'next/dynamic';
@@ -17,15 +18,37 @@ const PDFDownloadButton = dynamic<any>(
 );
 
 export default function ListadoTab() {
-    const { papeletas, eliminarPapeleta, loading: loadingPapeletas } = usePapeletas();
+    const { papeletas, eliminarPapeleta, actualizarPapeleta, loading: loadingPapeletas } = usePapeletas();
     const { hermanos } = useHermanos();
+    const { structure } = useCortejo();
     const [loading, setLoading] = useState(false);
     const [selectedPapeleta, setSelectedPapeleta] = useState<any | null>(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editForm, setEditForm] = useState<any | null>(null);
 
     // Filter states
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
+
+    const handleSave = async () => {
+        if (!editForm) return;
+        try {
+            setLoading(true);
+            await actualizarPapeleta(editForm);
+            setSelectedPapeleta(editForm);
+            setIsEditing(false);
+        } catch (err: any) {
+            alert(`Error al actualizar: ${err.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const startEditing = () => {
+        setEditForm({ ...selectedPapeleta });
+        setIsEditing(true);
+    };
 
     const getNombreHermano = (id: string) => {
         const h = hermanos.find(herm => herm.id === id);
