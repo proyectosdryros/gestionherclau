@@ -159,21 +159,30 @@ export default function ListadoTab() {
                 </CardContent>
             </Card>
 
-            {/* Modal de Detalle (Copiado de la lógica original) */}
+            {/* Modal de Detalle */}
             {selectedPapeleta && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelectedPapeleta(null)}>
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => { if (!isEditing) setSelectedPapeleta(null); }}>
                     <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200" onClick={e => e.stopPropagation()}>
                         <div className="p-8">
                             <div className="flex justify-between items-start mb-8">
                                 <div>
-                                    <h2 className="text-2xl font-black text-slate-900 leading-tight">Detalle de Papeleta</h2>
+                                    <h2 className="text-2xl font-black text-slate-900 leading-tight">
+                                        {isEditing ? 'Editando Papeleta' : 'Detalle de Papeleta'}
+                                    </h2>
                                     <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-1">
                                         ID: {selectedPapeleta.id.slice(0, 8)}
                                     </p>
                                 </div>
-                                <Button variant="ghost" size="icon" onClick={() => setSelectedPapeleta(null)} className="rounded-full hover:bg-slate-100">
-                                    <X className="w-5 h-5" />
-                                </Button>
+                                <div className="flex gap-2">
+                                    {!isEditing && (
+                                        <Button variant="ghost" size="icon" onClick={startEditing} className="rounded-full hover:bg-blue-50 text-blue-500">
+                                            <Edit3 className="w-5 h-5" />
+                                        </Button>
+                                    )}
+                                    <Button variant="ghost" size="icon" onClick={() => { setSelectedPapeleta(null); setIsEditing(false); }} className="rounded-full hover:bg-slate-100">
+                                        <X className="w-5 h-5" />
+                                    </Button>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-8 mb-10">
@@ -184,29 +193,99 @@ export default function ListadoTab() {
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Año y Estado</label>
-                                    <p className="text-lg font-bold text-slate-800">{selectedPapeleta.anio}</p>
-                                    <div className="mt-1">{getStatusBadge(selectedPapeleta.estado)}</div>
+                                    {isEditing ? (
+                                        <div className="space-y-2">
+                                            <p className="text-lg font-bold text-slate-800">{selectedPapeleta.anio}</p>
+                                            <select
+                                                className="w-full h-8 px-2 rounded-lg border border-slate-200 bg-slate-50 text-xs font-bold"
+                                                value={editForm.estado}
+                                                onChange={(e) => setEditForm({ ...editForm, estado: e.target.value })}
+                                            >
+                                                <option value="SOLICITADA">SOLICITADA</option>
+                                                <option value="ASIGNADA">ASIGNADA</option>
+                                                <option value="EMITIDA">EMITIDA</option>
+                                                <option value="ANULADA">ANULADA</option>
+                                            </select>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p className="text-lg font-bold text-slate-800">{selectedPapeleta.anio}</p>
+                                            <div className="mt-1">{getStatusBadge(selectedPapeleta.estado)}</div>
+                                        </>
+                                    )}
                                 </div>
+
+                                <div className="col-span-2 space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Tramo Sugerido</label>
+                                    {isEditing ? (
+                                        <select
+                                            className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-blue-50 text-sm font-bold text-blue-900 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                            value={editForm.tramoId || ''}
+                                            onChange={(e) => setEditForm({ ...editForm, tramoId: e.target.value || null })}
+                                        >
+                                            <option value="">Sin tramo asignado</option>
+                                            {structure?.tramos.map(t => (
+                                                <option key={t.id} value={t.id}>TRAMO {t.numero}: {t.nombre}</option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <p className="text-sm font-black uppercase italic text-slate-700">
+                                            {structure?.tramos.find(t => t.id === selectedPapeleta.tramoId)?.nombre || 'NINGUNO'}
+                                        </p>
+                                    )}
+                                </div>
+
                                 <div className="col-span-2 space-y-1">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Observaciones / Puesto</label>
-                                    <p className="text-slate-600 bg-slate-50 p-4 rounded-2xl italic border border-slate-100 min-h-[80px]">
-                                        {selectedPapeleta.observaciones || 'No hay observaciones registradas.'}
-                                    </p>
+                                    {isEditing ? (
+                                        <textarea
+                                            className="w-full text-slate-600 bg-slate-50 p-4 rounded-2xl italic border border-slate-200 min-h-[80px] text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                                            value={editForm.observaciones || ''}
+                                            onChange={(e) => setEditForm({ ...editForm, observaciones: e.target.value })}
+                                            placeholder="Escribe anotaciones aquí..."
+                                        />
+                                    ) : (
+                                        <p className="text-slate-600 bg-slate-50 p-4 rounded-2xl italic border border-slate-100 min-h-[80px]">
+                                            {selectedPapeleta.observaciones || 'No hay observaciones registradas.'}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
                             <div className="flex gap-4">
-                                <PDFDownloadButton
-                                    papeleta={selectedPapeleta}
-                                    hermano={getHermano(selectedPapeleta.hermanoId)}
-                                />
-                                <Button
-                                    variant="outline"
-                                    className="h-16 px-8 rounded-2xl border-slate-200 hover:bg-slate-50 text-slate-500 font-bold"
-                                    onClick={() => setSelectedPapeleta(null)}
-                                >
-                                    Cerrar Vista
-                                </Button>
+                                {isEditing ? (
+                                    <>
+                                        <Button
+                                            className="h-16 px-8 rounded-2xl bg-slate-900 border-slate-200 hover:bg-black text-white font-bold flex-1 shadow-lg shadow-slate-900/20"
+                                            onClick={handleSave}
+                                            disabled={loading}
+                                        >
+                                            {loading ? 'Guardando...' : <><Save className="w-4 h-4 mr-2" /> Guardar Cambios</>}
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            className="h-16 px-8 rounded-2xl border-slate-200 hover:bg-slate-50 text-slate-500 font-bold"
+                                            onClick={() => setIsEditing(false)}
+                                            disabled={loading}
+                                        >
+                                            Cancelar
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <PDFDownloadButton
+                                            papeleta={selectedPapeleta}
+                                            hermano={getHermano(selectedPapeleta.hermanoId)}
+                                        />
+                                        <Button
+                                            variant="outline"
+                                            className="h-16 px-8 rounded-2xl border-slate-200 hover:bg-slate-50 text-slate-500 font-bold"
+                                            onClick={() => setSelectedPapeleta(null)}
+                                        >
+                                            Cerrar Vista
+                                        </Button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>

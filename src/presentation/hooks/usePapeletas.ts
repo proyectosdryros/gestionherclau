@@ -57,12 +57,26 @@ export function usePapeletas() {
         }
     };
 
+    const actualizarPapeleta = async (papeleta: Papeleta) => {
+        try {
+            setLoading(true);
+            await repo.update(papeleta);
+            await refresh();
+        } catch (err) {
+            console.error(err);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return {
         papeletas,
         loading,
         error,
         refresh,
         crearPapeleta,
-        eliminarPapeleta
+        eliminarPapeleta,
+        actualizarPapeleta
     };
 }
