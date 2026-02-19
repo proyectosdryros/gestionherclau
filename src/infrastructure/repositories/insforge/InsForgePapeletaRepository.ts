@@ -19,10 +19,13 @@ export class InsForgePapeletaRepository {
     }
 
     async create(papeleta: Omit<Papeleta, 'id' | 'auditoria' | 'asignarManual' | 'asignarAutomatico'>): Promise<void> {
+        // Extraemos tramoId para no enviarlo si InsForge no tiene la columna todavía
+        const { tramoId, ...rest } = papeleta as any;
+
         const { error } = await insforge.database
             .from('papeletas')
             .insert({
-                ...papeleta,
+                ...rest,
                 auditoria: {
                     created_at: new Date(),
                     updated_at: new Date(),
@@ -34,9 +37,11 @@ export class InsForgePapeletaRepository {
     }
 
     async update(papeleta: Papeleta): Promise<void> {
+        const { tramoId, ...rest } = papeleta as any;
+
         const { error } = await insforge.database
             .from('papeletas')
-            .update(papeleta)
+            .update(rest)
             .eq('id', papeleta.id);
 
         if (error) throw new Error(error.message);
