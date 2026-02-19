@@ -19,24 +19,46 @@ export class InsForgePapeletaRepository {
     }
 
     async create(papeleta: Omit<Papeleta, 'id' | 'auditoria' | 'asignarManual' | 'asignarAutomatico'>): Promise<void> {
+        // Construimos el payload explícitamente para evitar que InsForge/PostgREST
+        // rechace campos cuyo nombre no coincida con el schema cache
+        const payload: Record<string, any> = {
+            hermanoId: papeleta.hermanoId,
+            anio: papeleta.anio,
+            fechaSolicitud: papeleta.fechaSolicitud,
+            estado: papeleta.estado,
+            puestoSolicitadoId: papeleta.puestoSolicitadoId ?? null,
+            puestoAsignadoId: papeleta.puestoAsignadoId ?? null,
+            esAsignacionManual: papeleta.esAsignacionManual ?? false,
+            observaciones: papeleta.observaciones ?? null,
+            auditoria: {
+                created_at: new Date(),
+                updated_at: new Date(),
+                version: 1
+            }
+        };
+
         const { error } = await insforge.database
             .from('papeletas')
-            .insert({
-                ...papeleta,
-                auditoria: {
-                    created_at: new Date(),
-                    updated_at: new Date(),
-                    version: 1
-                }
-            });
+            .insert(payload);
 
         if (error) throw new Error(error.message);
     }
 
     async update(papeleta: Papeleta): Promise<void> {
+        const payload: Record<string, any> = {
+            hermanoId: papeleta.hermanoId,
+            anio: papeleta.anio,
+            fechaSolicitud: papeleta.fechaSolicitud,
+            estado: papeleta.estado,
+            puestoSolicitadoId: papeleta.puestoSolicitadoId ?? null,
+            puestoAsignadoId: papeleta.puestoAsignadoId ?? null,
+            esAsignacionManual: papeleta.esAsignacionManual ?? false,
+            observaciones: papeleta.observaciones ?? null,
+        };
+
         const { error } = await insforge.database
             .from('papeletas')
-            .update(papeleta)
+            .update(payload)
             .eq('id', papeleta.id);
 
         if (error) throw new Error(error.message);
