@@ -114,7 +114,10 @@ export function Sidebar() {
                         <div key={item.name} className="flex flex-col gap-1">
                             <Link
                                 href={item.href}
-                                onClick={() => !isCollapsed && setExpandedItem(expandedItem === item.name ? null : item.name)}
+                                onClick={() => {
+                                    if (!isCollapsed) setExpandedItem(expandedItem === item.name ? null : item.name);
+                                    setIsMobileOpen(false);
+                                }}
                                 className={cn(
                                     "flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group relative",
                                     isActive(item.href)

@@ -197,15 +197,15 @@ export default function DashboardSummaryPage() {
             <meta name="description" content="Dashboard administrativo con estadísticas en tiempo real y accesos directos a los módulos de gestión." />
 
             <div className="space-y-8">
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
                     <div className="flex flex-col gap-2">
-                        <h1 className="text-4xl font-black tracking-tighter text-slate-900 leading-none">Panel de Control</h1>
-                        <p className="text-slate-500 font-medium tracking-tight">
-                            Datos sincronizados en tiempo real con la base de datos de la Hermandad.
+                        <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-slate-900 leading-none">Panel de Control</h1>
+                        <p className="text-sm md:text-base text-slate-500 font-medium tracking-tight">
+                            Datos sincronizados en tiempo real con la base de datos.
                         </p>
                     </div>
                     {temporadaActiva && (
-                        <Badge className="w-fit h-10 px-4 rounded-xl bg-primary/10 text-primary border-primary/20 text-lg font-black tracking-tighter shadow-sm flex items-center gap-2">
+                        <Badge className="w-full lg:w-auto h-12 lg:h-10 px-4 rounded-xl bg-primary/10 text-primary border-primary/20 text-lg font-black tracking-tighter shadow-sm flex items-center justify-center lg:justify-start gap-2">
                             <CalendarDays className="w-5 h-5" />
                             {temporadaActiva.nombre} ({temporadaActiva.anio})
                         </Badge>
