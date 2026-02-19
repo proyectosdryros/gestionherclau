@@ -25,6 +25,7 @@ export default function AsignacionTab() {
 
     const [posicionSeleccionada, setPosicionSeleccionada] = useState<PosicionSeleccionada | null>(null);
     const [search, setSearch] = useState('');
+    const [modoLibre, setModoLibre] = useState(false);
 
     const loading = loadingCortejo || loadingPapeletas || loadingHermanos;
 
@@ -61,8 +62,12 @@ export default function AsignacionTab() {
             .filter(p => {
                 if (p.estado === 'ANULADA') return false;
                 if (hermanoIdsAsignados.has(p.hermanoId)) return false;
-                // Sin tramoId → candidato universal; con tramoId → debe coincidir
-                if (p.tramoId && p.tramoId !== tramoId) return false;
+
+                if (!modoLibre) {
+                    // Modo estricto: la papeleta debe ser del mismo tramo, o sin tramo asignado
+                    const tramoidPapeleta = (p as any).tramoid as string | null | undefined;
+                    if (tramoidPapeleta && tramoidPapeleta !== tramoId) return false;
+                }
                 return true;
             })
             .map(p => {
@@ -76,13 +81,15 @@ export default function AsignacionTab() {
                     .toLowerCase()
                     .includes(search.toLowerCase());
             })
-            // Primero los del tramo exacto, luego los universales (sin tramo)
+            // Ordenar: primero los del tramo exacto, luego los sin tramo, luego los de otros tramos (modoLibre)
             .sort((a, b) => {
-                const aExacto = a.papeleta.tramoId === tramoId ? 0 : 1;
-                const bExacto = b.papeleta.tramoId === tramoId ? 0 : 1;
-                return aExacto - bExacto;
+                const tramoidA = (a.papeleta as any).tramoid as string | null;
+                const tramoidB = (b.papeleta as any).tramoid as string | null;
+                const aScore = tramoidA === tramoId ? 0 : tramoidA ? 2 : 1;
+                const bScore = tramoidB === tramoId ? 0 : tramoidB ? 2 : 1;
+                return aScore - bScore;
             });
-    }, [posicionSeleccionada, papeletas, hermanos, hermanoIdsAsignados, search]);
+    }, [posicionSeleccionada, papeletas, hermanos, hermanoIdsAsignados, search, modoLibre]);
 
     const handleAsignar = (papeletaId: string, hermanoId: string) => {
         if (!posicionSeleccionada) return;
@@ -230,6 +237,20 @@ export default function AsignacionTab() {
                                     autoFocus
                                 />
                             </div>
+
+                            {/* Checkbox modo libre */}
+                            <label className="flex items-center gap-2 mt-3 cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={modoLibre}
+                                    onChange={e => setModoLibre(e.target.checked)}
+                                    className="w-4 h-4 rounded border-slate-300 accent-orange-500"
+                                />
+                                <span className="text-xs font-bold text-slate-500">
+                                    Modo libre
+                                    <span className="ml-1 font-normal text-slate-400">(mostrar hermanos de otros tramos)</span>
+                                </span>
+                            </label>
                         </div>
 
                         {/* Lista de candidatos */}
@@ -240,7 +261,9 @@ export default function AsignacionTab() {
                                 </div>
                             ) : (
                                 candidatos.map(({ papeleta, hermano }) => {
-                                    const esExacto = papeleta.tramoId === posicionSeleccionada.tramoId;
+                                    const tramoidPapeleta = (papeleta as any).tramoid as string | null;
+                                    const esExacto = tramoidPapeleta === posicionSeleccionada.tramoId;
+                                    const sinTramo = !tramoidPapeleta;
                                     return (
                                         <button
                                             key={papeleta.id}
@@ -260,9 +283,13 @@ export default function AsignacionTab() {
                                                     <Badge className="bg-green-100 text-green-700 border-green-200 text-[9px] font-black uppercase">
                                                         Su tramo
                                                     </Badge>
-                                                ) : (
+                                                ) : sinTramo ? (
                                                     <Badge className="bg-slate-100 text-slate-500 border-slate-200 text-[9px] font-black uppercase">
                                                         Sin tramo
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge className="bg-orange-100 text-orange-600 border-orange-200 text-[9px] font-black uppercase">
+                                                        Otro tramo
                                                     </Badge>
                                                 )}
                                                 <Plus className="w-4 h-4 text-slate-200 group-hover:text-blue-500 transition-colors" />

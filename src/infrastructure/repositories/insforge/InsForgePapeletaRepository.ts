@@ -19,8 +19,6 @@ export class InsForgePapeletaRepository {
     }
 
     async create(papeleta: Omit<Papeleta, 'id' | 'auditoria' | 'asignarManual' | 'asignarAutomatico'>): Promise<void> {
-        // Construimos el payload explícitamente para evitar que InsForge/PostgREST
-        // rechace campos cuyo nombre no coincida con el schema cache
         const payload: Record<string, any> = {
             hermanoId: papeleta.hermanoId,
             anio: papeleta.anio,
@@ -30,6 +28,7 @@ export class InsForgePapeletaRepository {
             puestoAsignadoId: papeleta.puestoAsignadoId ?? null,
             esAsignacionManual: papeleta.esAsignacionManual ?? false,
             observaciones: papeleta.observaciones ?? null,
+            tramoid: (papeleta as any).tramoId ?? null,  // columna en InsForge
             auditoria: {
                 created_at: new Date(),
                 updated_at: new Date(),
@@ -54,6 +53,7 @@ export class InsForgePapeletaRepository {
             puestoAsignadoId: papeleta.puestoAsignadoId ?? null,
             esAsignacionManual: papeleta.esAsignacionManual ?? false,
             observaciones: papeleta.observaciones ?? null,
+            tramoid: (papeleta as any).tramoId ?? null,  // columna en InsForge
         };
 
         const { error } = await insforge.database
