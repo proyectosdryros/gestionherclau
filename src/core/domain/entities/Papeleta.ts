@@ -14,6 +14,7 @@ export class Papeleta {
         public puestoSolicitadoId: string | null = null,
         public puestoAsignadoId: string | null = null,
         public esAsignacionManual: boolean = false,
+        public readonly tramoId: string | null = null,
         public observaciones?: string | null
     ) { }
 

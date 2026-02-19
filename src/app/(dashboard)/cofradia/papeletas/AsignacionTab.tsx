@@ -166,6 +166,16 @@ export default function AsignacionTab() {
                                                                 if (pos.hermanoId) {
                                                                     asignarHermano(tIdx, sIdx, elem.id, pos.id, '', '');
                                                                 } else if (selectedPapeletaId && selectedHermano) {
+                                                                    // Validar Tramo
+                                                                    const tramoPapeleta = selectedPapeleta?.tramoId;
+                                                                    const tramoActual = structure.tramos[tIdx].id;
+
+                                                                    if (tramoPapeleta && tramoPapeleta !== tramoActual) {
+                                                                        const tramoNombrePapeleta = structure.tramos.find(t => t.id === tramoPapeleta)?.nombre || 'Desconocido';
+                                                                        const confirmacion = confirm(`ATENCIÓN: Este hermano tiene papeleta para el tramo "${tramoNombrePapeleta}", pero intentas asignarlo al tramo "${structure.tramos[tIdx].nombre}". \n\n¿Deseas forzar esta asignación de todas formas?`);
+                                                                        if (!confirmacion) return;
+                                                                    }
+
                                                                     asignarHermano(tIdx, sIdx, elem.id, pos.id, selectedHermano.id, selectedPapeletaId);
                                                                     setSelectedPapeletaId(null);
                                                                 }

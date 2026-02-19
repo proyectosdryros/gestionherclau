@@ -6,10 +6,12 @@ import { Card, CardContent } from '@/presentation/components/ui/Card';
 import { Button } from '@/presentation/components/ui/Button';
 import { Input } from '@/presentation/components/ui/Input';
 import { useHermanos } from '@/presentation/hooks/useHermanos';
+import { usePapeletas } from '@/presentation/hooks/usePapeletas';
+import { useCortejo } from '@/presentation/hooks/useCortejo';
 import { InsForgePrecioRepository } from '@/infrastructure/repositories/insforge/InsForgePrecioRepository';
 import { VenderPapeletaUseCase } from '@/core/use-cases/cofradia/VenderPapeletaUseCase';
 import { ConfiguracionPrecio, TipoPrecio } from '@/core/domain/entities/ConfiguracionPrecio';
-import { Search, ShoppingCart, User, Ghost, Star, Disc, Flame, ShieldAlert, Heart, Info, Check } from 'lucide-react';
+import { Search, ShoppingCart, User, Ghost, Star, Disc, Flame, ShieldAlert, Heart, Info, Check, MapPin } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
 const precioRepo = new InsForgePrecioRepository();
@@ -29,9 +31,12 @@ const IconMap: Record<string, React.ReactNode> = {
 
 export default function VentaTab() {
     const { hermanos } = useHermanos();
+    const { papeletas, refresh: refreshPapeletas } = usePapeletas();
+    const { structure } = useCortejo();
     const [precios, setPrecios] = useState<ConfiguracionPrecio[]>([]);
     const [selectedHermanoId, setSelectedHermanoId] = useState<string | null>(null);
     const [selectedPrecioId, setSelectedPrecioId] = useState<string | null>(null);
+    const [selectedTramoId, setSelectedTramoId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -55,12 +60,15 @@ export default function VentaTab() {
                 hermanoId: selectedHermanoId,
                 precioId: selectedPrecioId,
                 anio: new Date().getFullYear(),
+                tramoId: selectedTramoId,
                 observaciones: 'Venta Directa'
             });
             alert('¡Venta realizada con éxito!');
             setSelectedHermanoId(null);
             setSelectedPrecioId(null);
+            setSelectedTramoId(null);
             setSearchTerm('');
+            refreshPapeletas();
         } catch (error: any) {
             alert(error.message || 'Error en la venta');
         } finally {
@@ -68,12 +76,17 @@ export default function VentaTab() {
         }
     };
 
-    const filteredHermanos = hermanos.filter(h =>
-        `${h.nombre} ${h.apellido1} ${h.numeroHermano}`.toLowerCase().includes(searchTerm.toLowerCase())
-    ).slice(0, 4);
+    // Filtrar hermanos que ya tienen papeleta este año
+    const filteredHermanos = hermanos.filter(h => {
+        const yaTienePapeleta = papeletas.some(p => p.hermanoId === h.id && p.anio === new Date().getFullYear());
+        if (yaTienePapeleta) return false;
+
+        return `${h.nombre} ${h.apellido1} ${h.numeroHermano}`.toLowerCase().includes(searchTerm.toLowerCase());
+    }).slice(0, 4);
 
     const selectedHermano = hermanos.find(h => h.id === selectedHermanoId);
     const selectedPrecio = precios.find(p => p.id === selectedPrecioId);
+    const selectedTramo = structure?.tramos.find(t => t.id === selectedTramoId);
 
     return (
         <div className="grid lg:grid-cols-3 gap-8 p-4">
@@ -92,18 +105,22 @@ export default function VentaTab() {
                             />
                             {searchTerm && (
                                 <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 shadow-2xl rounded-2xl overflow-hidden z-20">
-                                    {filteredHermanos.map(h => (
-                                        <button key={h.id} onClick={() => setSelectedHermanoId(h.id)} className="w-full p-4 hover:bg-slate-50 text-left border-b last:border-0 flex justify-between items-center group">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-[10px] text-slate-500">{h.nombre[0]}{h.apellido1[0]}</div>
-                                                <div>
-                                                    <p className="font-bold text-slate-900 leading-none">{h.nombre} {h.apellido1}</p>
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Hermano {h.numeroHermano}</p>
+                                    {filteredHermanos.length === 0 ? (
+                                        <div className="p-4 text-center text-slate-400 italic text-sm">No disponible o ya tiene papeleta</div>
+                                    ) : (
+                                        filteredHermanos.map(h => (
+                                            <button key={h.id} onClick={() => setSelectedHermanoId(h.id)} className="w-full p-4 hover:bg-slate-50 text-left border-b last:border-0 flex justify-between items-center group">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-[10px] text-slate-500">{h.nombre[0]}{h.apellido1[0]}</div>
+                                                    <div>
+                                                        <p className="font-bold text-slate-900 leading-none">{h.nombre} {h.apellido1}</p>
+                                                        <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Hermano {h.numeroHermano}</p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <Check className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        </button>
-                                    ))}
+                                                <Check className="w-4 h-4 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </button>
+                                        ))
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -138,6 +155,29 @@ export default function VentaTab() {
                         ))}
                     </div>
                 </div>
+
+                {/* 3. SELECCIÓN DE TRAMO */}
+                <div className={!selectedPrecioId ? 'opacity-30 pointer-events-none grayscale' : ''}>
+                    <h2 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 px-2 italic">3. Seleccionar Tramo Sugerido</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {structure?.tramos.map(tramo => (
+                            <button
+                                key={tramo.id}
+                                onClick={() => setSelectedTramoId(tramo.id)}
+                                className={`p-4 rounded-2xl border transition-all text-left flex items-center gap-4 group shadow-sm ${selectedTramoId === tramo.id ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-100 bg-white hover:border-slate-200'}`}
+                            >
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black ${selectedTramoId === tramo.id ? 'bg-white/20' : 'bg-slate-50 text-slate-400 group-hover:bg-slate-100'}`}>
+                                    {tramo.numero}
+                                </div>
+                                <div>
+                                    <p className={`text-[10px] font-black uppercase tracking-widest ${selectedTramoId === tramo.id ? 'text-white/50' : 'text-slate-400'}`}>Tramo</p>
+                                    <p className="font-bold text-[13px] uppercase italic">{tramo.nombre}</p>
+                                </div>
+                                {selectedTramoId === tramo.id && <MapPin className="ml-auto w-4 h-4 text-primary" />}
+                            </button>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             {/* RESUMEN Y COBRO */}
@@ -146,8 +186,16 @@ export default function VentaTab() {
                     <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-8 border-b pb-4">Carrito de Venta</h3>
                     <div className="space-y-4">
                         <div className="flex justify-between items-center">
+                            <span className="text-sm font-bold text-slate-500">Hermano</span>
+                            <span className="text-sm font-black text-slate-900">{selectedHermano?.nombre || '--'}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
                             <span className="text-sm font-bold text-slate-500">Papeleta</span>
                             <span className="text-sm font-black text-slate-900">{selectedPrecio?.nombre || '--'}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm font-bold text-slate-500">Tramo</span>
+                            <span className="text-sm font-black text-slate-900 italic uppercase underline decoration-primary decoration-2 underline-offset-4">{selectedTramo?.nombre || 'NO ASIGNADO'}</span>
                         </div>
                         <div className="flex justify-between items-center py-4 border-y border-dashed border-slate-100">
                             <span className="text-lg font-black text-slate-900 italic">Total</span>

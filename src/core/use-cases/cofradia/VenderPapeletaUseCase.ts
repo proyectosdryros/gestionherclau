@@ -13,10 +13,11 @@ export class VenderPapeletaUseCase {
         hermanoId: string;
         precioId: string;
         anio: number;
+        tramoId?: string | null;
         observaciones?: string;
     }): Promise<void> {
         // 0. Validar duplicados
-        const todas = await this.papeletaRepo.findAll();
+        const todas = await this.papeletaRepo.findAll(request.anio);
         const existe = todas.find(p => p.hermanoId === request.hermanoId && p.anio === request.anio);
         if (existe) {
             throw new Error(`Este hermano ya tiene una papeleta registrada para el año ${request.anio}`);
@@ -35,21 +36,21 @@ export class VenderPapeletaUseCase {
             importe: precio.importe,
             fechaEmision: now,
             fechaVencimiento: undefined,
-            estado: 'PENDIENTE', // Se crea pendiente, el cobro puede ser en el momento o posterior
+            estado: 'PENDIENTE',
             tipo: 'PAPELETA_SITIO',
             observaciones: request.observaciones
         });
 
         // 3. Crear Papeleta
-        // Nota: La papeleta se crea pero NO se asigna puesto automáticamente aquí, solo la solicitud/emisión
         await this.papeletaRepo.create({
             hermanoId: request.hermanoId,
             anio: request.anio,
             fechaSolicitud: now,
-            estado: 'SOLICITADA', // O 'EMITIDA' si se considera entregada al momento
+            estado: 'SOLICITADA',
             puestoSolicitadoId: null,
             puestoAsignadoId: null,
             esAsignacionManual: false,
+            tramoId: request.tramoId || null,
             observaciones: request.observaciones || precio.nombre
         });
     }
