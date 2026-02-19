@@ -7,6 +7,7 @@ import { Button } from '@/presentation/components/ui/Button';
 import { Users, UserCheck, Settings, Wand2, ArrowRightLeft, Plus, Ticket } from 'lucide-react';
 import { usePapeletas } from '@/presentation/hooks/usePapeletas';
 import { useHermanos } from '@/presentation/hooks/useHermanos';
+import { useCortejo } from '@/presentation/hooks/useCortejo';
 import { Modal } from '@/presentation/components/ui/Modal';
 import { Input } from '@/presentation/components/ui/Input';
 import { useRouter } from 'next/navigation';
@@ -15,10 +16,12 @@ export default function CofradiaPage() {
     const router = useRouter();
     const { papeletas, crearPapeleta } = usePapeletas();
     const { hermanos } = useHermanos();
+    const { structure } = useCortejo();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [newPapeleta, setNewPapeleta] = useState({
         hermanoId: '',
         anio: new Date().getFullYear(),
+        tramoId: '' as string | null,
         observaciones: ''
     });
 
@@ -37,10 +40,11 @@ export default function CofradiaPage() {
                 puestoSolicitadoId: null,
                 puestoAsignadoId: null,
                 esAsignacionManual: false,
+                tramoId: newPapeleta.tramoId || null,
                 observaciones: newPapeleta.observaciones
             });
             setIsCreateModalOpen(false);
-            setNewPapeleta({ hermanoId: '', anio: new Date().getFullYear(), observaciones: '' });
+            setNewPapeleta({ hermanoId: '', anio: new Date().getFullYear(), tramoId: null, observaciones: '' });
             alert('Solicitud creada correctamente');
         } catch (err) {
             console.error(err);
