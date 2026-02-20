@@ -47,7 +47,7 @@ export class VenderPapeletaUseCase {
             anio: request.anio,
             fechaSolicitud: now,
             estado: 'SOLICITADA',
-            puestoSolicitadoId: null,
+            puestoSolicitadoId: request.precioId, // Guardamos el ID del precio para control de tipos
             puestoAsignadoId: null,
             esAsignacionManual: false,
             tramoId: request.tramoId || null,

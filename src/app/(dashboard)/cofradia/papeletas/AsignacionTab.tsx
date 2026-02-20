@@ -4,15 +4,18 @@ import React, { useState, useMemo } from 'react';
 import { useCortejo } from '@/presentation/hooks/useCortejo';
 import { usePapeletas } from '@/presentation/hooks/usePapeletas';
 import { useHermanos } from '@/presentation/hooks/useHermanos';
+import { usePrecios } from '@/presentation/hooks/usePrecios';
 import { Button } from '@/presentation/components/ui/Button';
 import { Input } from '@/presentation/components/ui/Input';
-import { Search, UserCheck, X, Plus, Ghost, Disc } from 'lucide-react';
+import { Search, UserCheck, X, Plus, Ghost, Disc, MapPin, Tag } from 'lucide-react';
 import { Badge } from '@/presentation/components/ui/Badge';
 
 interface PosicionSeleccionada {
     tIdx: number;
     sIdx: number;
     elemId: string;
+    elemTipo: string;
+    puestoNombre: string;
     posId: string;
     tramoId: string;
     tramoNombre: string;
@@ -22,6 +25,7 @@ export default function AsignacionTab() {
     const { structure, loading: loadingCortejo, asignarHermano } = useCortejo();
     const { papeletas, loading: loadingPapeletas } = usePapeletas();
     const { hermanos, loading: loadingHermanos } = useHermanos();
+    const { precios, loading: loadingPrecios } = usePrecios();
 
     const [posicionSeleccionada, setPosicionSeleccionada] = useState<PosicionSeleccionada | null>(null);
     const [search, setSearch] = useState('');
@@ -56,7 +60,7 @@ export default function AsignacionTab() {
     /** Candidatos para la posición seleccionada */
     const candidatos = useMemo(() => {
         if (!posicionSeleccionada) return [];
-        const tramoId = posicionSeleccionada.tramoId;
+        const { tramoId, elemTipo, puestoNombre } = posicionSeleccionada;
 
         return papeletas
             .filter(p => {
@@ -64,9 +68,27 @@ export default function AsignacionTab() {
                 if (hermanoIdsAsignados.has(p.hermanoId)) return false;
 
                 if (!modoLibre) {
-                    // Modo estricto: SOLO papeletas con el tramoid exacto de este tramo
+                    // 1. Validar TRAMO
                     const tramoidPapeleta = (p as any).tramoid as string | null | undefined;
                     if (!tramoidPapeleta || tramoidPapeleta !== tramoId) return false;
+
+                    // 2. Validar TIPO de Papeleta vs TIPO de Posición
+                    // Resolvemos el precio de la papeleta
+                    const precio = precios.find(pr => pr.id === p.puestoSolicitadoId);
+                    if (precio) {
+                        const tipoPrecio = precio.tipo; // NAZARENO, VARA, INSIGNIA, COSTALERO, etc.
+
+                        // Lógica de compatibilidad
+                        if (elemTipo === 'FILA_NAZARENOS' && tipoPrecio !== 'NAZARENO') return false;
+                        if (elemTipo === 'INSIGNIA') {
+                            // Si el puesto es 'Portador', requiere tipo INSIGNIA, FAROL, BOCINA o CRUZ_GUIA
+                            // Si el puesto es 'Vara', requiere tipo VARA
+                            const esVara = puestoNombre.toLowerCase().includes('vara');
+                            if (esVara && tipoPrecio !== 'VARA') return false;
+                            if (!esVara && !['INSIGNIA', 'FAROL', 'BOCINA', 'CRUZ_GUIA'].includes(tipoPrecio)) return false;
+                        }
+                        if (elemTipo === 'PASO' && tipoPrecio !== 'COSTALERO') return false;
+                    }
                 }
                 return true;
             })
@@ -81,7 +103,6 @@ export default function AsignacionTab() {
                     .toLowerCase()
                     .includes(search.toLowerCase());
             })
-            // Ordenar: primero los del tramo exacto, luego los sin tramo, luego los de otros tramos (modoLibre)
             .sort((a, b) => {
                 const tramoidA = (a.papeleta as any).tramoid as string | null;
                 const tramoidB = (b.papeleta as any).tramoid as string | null;
@@ -89,7 +110,8 @@ export default function AsignacionTab() {
                 const bScore = tramoidB === tramoId ? 0 : tramoidB ? 2 : 1;
                 return aScore - bScore;
             });
-    }, [posicionSeleccionada, papeletas, hermanos, hermanoIdsAsignados, search, modoLibre]);
+    }, [posicionSeleccionada, papeletas, hermanos, hermanoIdsAsignados, search, modoLibre, precios]);
+
 
     const handleAsignar = (papeletaId: string, hermanoId: string) => {
         if (!posicionSeleccionada) return;
@@ -136,6 +158,8 @@ export default function AsignacionTab() {
                             tIdx,
                             sIdx,
                             elemId: elemId,
+                            elemTipo: tipo,
+                            puestoNombre: pos.nombrePuesto,
                             posId: pos.id,
                             tramoId: tramo.id,
                             tramoNombre: tramo.nombre,
@@ -314,9 +338,14 @@ export default function AsignacionTab() {
                                     <h2 className="text-lg font-black text-slate-900 uppercase italic tracking-tight">
                                         Asignar Hermano
                                     </h2>
-                                    <p className="text-xs text-slate-500 font-bold mt-0.5">
-                                        TRAMO: <span className="text-slate-900">{posicionSeleccionada.tramoNombre}</span>
-                                    </p>
+                                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+                                        <p className="text-[10px] text-slate-500 font-bold uppercase italic">
+                                            TRAMO: <span className="text-slate-900 underline decoration-slate-300 decoration-2">{posicionSeleccionada.tramoNombre}</span>
+                                        </p>
+                                        <p className="text-[10px] text-slate-500 font-bold uppercase italic">
+                                            PUESTO: <span className="text-slate-900 underline decoration-slate-300 decoration-2">{posicionSeleccionada.puestoNombre}</span>
+                                        </p>
+                                    </div>
                                 </div>
                                 <button
                                     onClick={() => setPosicionSeleccionada(null)}
@@ -374,9 +403,19 @@ export default function AsignacionTab() {
                                                 <p className="font-bold text-slate-900 text-sm">
                                                     {hermano?.nombre} {hermano?.apellido1}
                                                 </p>
-                                                <p className="text-[10px] text-slate-400 font-bold">
-                                                    Nº {hermano?.numeroHermano} · {papeleta.observaciones || 'Sin nota'}
-                                                </p>
+                                                <div className="flex items-center gap-3 mt-0.5">
+                                                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                                                        Nº {hermano?.numeroHermano}
+                                                    </p>
+                                                    <div className="flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 rounded text-[8px] font-black text-slate-500 uppercase italic">
+                                                        <Tag className="w-2.5 h-2.5" />
+                                                        {papeleta.observaciones}
+                                                    </div>
+                                                    <div className="flex items-center gap-1 bg-slate-100 px-1.5 py-0.5 rounded text-[8px] font-black text-slate-500 uppercase italic">
+                                                        <MapPin className="w-2.5 h-2.5" />
+                                                        {structure?.tramos.find(t => t.id === (papeleta as any).tramoid)?.nombre || 'Sin tramo'}
+                                                    </div>
+                                                </div>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 {esExacto ? (
