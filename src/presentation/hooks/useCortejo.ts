@@ -39,13 +39,13 @@ export function useCortejo(temporada: number = 2025) {
                         {
                             id: uuidv4(),
                             tipo: 'INSIGNIA',
-                            nombre: 'Farol de Guía (Izq)',
+                            nombre: 'Farol Izquierdo',
                             posiciones: [{ id: uuidv4(), hermanoId: null, papeletaId: null, nombrePuesto: 'Portador' }]
                         },
                         {
                             id: uuidv4(),
                             tipo: 'INSIGNIA',
-                            nombre: 'Farol de Guía (Der)',
+                            nombre: 'Farol Derecho',
                             posiciones: [{ id: uuidv4(), hermanoId: null, papeletaId: null, nombrePuesto: 'Portador' }]
                         }
                     ]

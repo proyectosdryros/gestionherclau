@@ -103,6 +103,58 @@ export default function AsignacionTab() {
         asignarHermano(tIdx, sIdx, elemId, posId, '', '');
     };
 
+    const renderPosiciones = (posiciones: any[], tIdx: number, sIdx: number, elemId: string, tipo: string, tramo: any, isCenter: boolean = false) => {
+        return posiciones.map((pos) => (
+            pos.hermanoId ? (
+                /* POSICIÓN OCUPADA */
+                <div
+                    key={pos.id}
+                    className={`flex items-center gap-2 bg-slate-900 text-white rounded-xl px-3 py-2 text-xs font-bold shadow-sm relative group ${isCenter ? 'scale-110 border-2 border-amber-400/50' : ''}`}
+                >
+                    <UserCheck className={`${isCenter ? 'w-5 h-5' : 'w-3.5 h-3.5'} text-amber-400 shrink-0`} />
+                    <div className="flex flex-col">
+                        <span className="truncate max-w-[120px] leading-tight">{getHermanoName(pos.hermanoId)}</span>
+                        <span className="text-white/40 text-[9px] font-black shrink-0">
+                            Nº{getHermanoNumero(pos.hermanoId)}
+                        </span>
+                    </div>
+
+                    <button
+                        onClick={() => handleDesasignar(tIdx, sIdx, elemId, pos.id)}
+                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0 shadow-md z-10"
+                        title="Desasignar"
+                    >
+                        <X className="w-3 h-3 text-white" />
+                    </button>
+                </div>
+            ) : (
+                /* POSICIÓN VACÍA */
+                <button
+                    key={pos.id}
+                    onClick={() => {
+                        setPosicionSeleccionada({
+                            tIdx,
+                            sIdx,
+                            elemId: elemId,
+                            posId: pos.id,
+                            tramoId: tramo.id,
+                            tramoNombre: tramo.nombre,
+                        });
+                        setSearch('');
+                    }}
+                    className={`flex items-center gap-1.5 border-2 border-dashed border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-400 font-bold hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50 transition-all ${isCenter ? 'scale-110 border-slate-300 bg-slate-50' : ''}`}
+                >
+                    {tipo === 'INSIGNIA'
+                        ? <Disc className={`${isCenter ? 'w-5 h-5 text-amber-500' : 'w-3 h-3'}`} />
+                        : <Ghost className="w-3 h-3" />
+                    }
+                    <span className="truncate max-w-[80px]">{pos.nombrePuesto}</span>
+                    <Plus className="w-3 h-3" />
+                </button>
+            )
+        ));
+    };
+
     if (loading) return (
         <div className="p-8 text-center text-slate-400 italic">Sincronizando datos…</div>
     );
@@ -125,75 +177,117 @@ export default function AsignacionTab() {
                     </div>
 
                     {/* Subtramos */}
-                    {tramo.subtramos.map((sub, sIdx) => (
-                        <div key={sub.id} className="bg-slate-50 rounded-2xl border border-slate-100 p-4 space-y-4">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                Subtramo {sub.numero}
-                            </span>
+                    {tramo.subtramos.map((sub, sIdx) => {
+                        // TRAMO 0 (CRUZ DE GUÍA): Layout Horizontal Específico
+                        // Asumimos que tiene 3 elementos: Cruz (idx 0), Farol Y (idx 1), Farol Z (idx 2)
+                        // Queremos: Farol Izq (idx 1) - Cruz (idx 0) - Farol Der (idx 2)
+                        // Ajustamos indices según useCortejo: 
+                        // useCortejo index 0: Cruz
+                        // useCortejo index 1: Farol Izq
+                        // useCortejo index 2: Farol Der
+                        if (tramo.numero === 0) {
+                            const cruz = sub.elementos[0];
+                            const farolIzq = sub.elementos[1];
+                            const farolDer = sub.elementos[2];
 
-                            {sub.elementos.map((elem) => (
-                                <div key={elem.id} className="space-y-2">
-                                    {/* Tipo de elemento */}
-                                    <div className="flex items-center gap-2">
-                                        <div className={`w-1 h-3 rounded-full ${elem.tipo === 'INSIGNIA' ? 'bg-amber-400' : elem.tipo === 'PASO' ? 'bg-purple-500' : 'bg-slate-300'}`} />
-                                        <span className="text-[9px] font-black uppercase text-slate-400 italic">
-                                            {elem.tipo === 'INSIGNIA' ? 'Insignia' : elem.tipo === 'PASO' ? 'Paso' : 'Nazarenos'}
-                                        </span>
+                            if (cruz && farolIzq && farolDer) {
+                                return (
+                                    <div key={sub.id} className="bg-slate-50 rounded-2xl border border-slate-100 p-6 space-y-4">
+                                        <div className="flex items-center justify-center gap-8">
+                                            {/* Farol Izq */}
+                                            <div className="flex flex-col items-center gap-2">
+                                                {renderPosiciones(farolIzq.posiciones, tIdx, sIdx, farolIzq.id, farolIzq.tipo, tramo)}
+                                                <span className="text-[9px] font-black uppercase text-slate-400 italic">{farolIzq.nombre}</span>
+                                            </div>
+
+                                            {/* Cruz Central */}
+                                            <div className="flex flex-col items-center gap-2 -mt-6">
+                                                {renderPosiciones(cruz.posiciones, tIdx, sIdx, cruz.id, cruz.tipo, tramo, true)}
+                                                <span className="text-[9px] font-black uppercase text-slate-900 italic">{cruz.nombre}</span>
+                                            </div>
+
+                                            {/* Farol Der */}
+                                            <div className="flex flex-col items-center gap-2">
+                                                {renderPosiciones(farolDer.posiciones, tIdx, sIdx, farolDer.id, farolDer.tipo, tramo)}
+                                                <span className="text-[9px] font-black uppercase text-slate-400 italic">{farolDer.nombre}</span>
+                                            </div>
+                                        </div>
                                     </div>
+                                );
+                            }
+                        }
 
-                                    {/* Posiciones */}
-                                    <div className="flex flex-wrap gap-2">
-                                        {elem.posiciones.map((pos) => (
-                                            pos.hermanoId ? (
-                                                /* POSICIÓN OCUPADA */
-                                                <div
-                                                    key={pos.id}
-                                                    className="flex items-center gap-2 bg-slate-900 text-white rounded-xl px-3 py-2 text-xs font-bold shadow-sm relative group"
-                                                >
-                                                    <UserCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                                                    <span className="truncate max-w-[120px]">{getHermanoName(pos.hermanoId)}</span>
-                                                    <span className="text-white/40 text-[9px] font-black shrink-0">
-                                                        Nº{getHermanoNumero(pos.hermanoId)}
+                        // LAYOUT ESTÁNDAR PARA OTROS TRAMOS
+                        return (
+                            <div key={sub.id} className="bg-slate-50 rounded-2xl border border-slate-100 p-4 space-y-4">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    Subtramo {sub.numero}
+                                </span>
+
+                                {sub.elementos.map((elem) => {
+                                    // LAYOUT HORIZONTAL PARA INSIGNIAS CON VARAS
+                                    if (elem.tipo === 'INSIGNIA' && elem.posiciones.length > 1) {
+                                        const portador = elem.posiciones.find(p => p.nombrePuesto === 'Portador');
+                                        const varas = elem.posiciones.filter(p => p.nombrePuesto !== 'Portador');
+
+                                        // Separar varas izquierda y derecha
+                                        // Asumimos paridad simple: Vara 1, 3... Izq | Vara 2, 4... Der
+                                        // O simplemente mitad y mitad
+                                        const mid = Math.ceil(varas.length / 2);
+                                        const varasIzq = varas.slice(0, mid);
+                                        const varasDer = varas.slice(mid);
+
+                                        return (
+                                            <div key={elem.id} className="space-y-2 py-2">
+                                                <div className="flex items-center justify-center gap-2 mb-1">
+                                                    <div className="w-1 h-3 rounded-full bg-amber-400" />
+                                                    <span className="text-[9px] font-black uppercase text-slate-400 italic">
+                                                        {elem.nombre}
                                                     </span>
-                                                    <button
-                                                        onClick={() => handleDesasignar(tIdx, sIdx, elem.id, pos.id)}
-                                                        className="ml-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                                                        title="Desasignar"
-                                                    >
-                                                        <X className="w-2.5 h-2.5 text-white" />
-                                                    </button>
                                                 </div>
-                                            ) : (
-                                                /* POSICIÓN VACÍA */
-                                                <button
-                                                    key={pos.id}
-                                                    onClick={() => {
-                                                        setPosicionSeleccionada({
-                                                            tIdx,
-                                                            sIdx,
-                                                            elemId: elem.id,
-                                                            posId: pos.id,
-                                                            tramoId: tramo.id,
-                                                            tramoNombre: tramo.nombre,
-                                                        });
-                                                        setSearch('');
-                                                    }}
-                                                    className="flex items-center gap-1.5 border-2 border-dashed border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-400 font-bold hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50 transition-all"
-                                                >
-                                                    {elem.tipo === 'INSIGNIA'
-                                                        ? <Disc className="w-3 h-3" />
-                                                        : <Ghost className="w-3 h-3" />
-                                                    }
-                                                    <span className="truncate max-w-[80px]">{pos.nombrePuesto}</span>
-                                                    <Plus className="w-3 h-3" />
-                                                </button>
-                                            )
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    ))}
+                                                <div className="flex items-center justify-center gap-4">
+                                                    {/* Varas Izq */}
+                                                    <div className="flex gap-2">
+                                                        {renderPosiciones(varasIzq, tIdx, sIdx, elem.id, elem.tipo, tramo)}
+                                                    </div>
+
+                                                    {/* Insignia Central */}
+                                                    {portador && (
+                                                        <div className="transform -translate-y-2">
+                                                            {renderPosiciones([portador], tIdx, sIdx, elem.id, elem.tipo, tramo, true)}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Varas Der */}
+                                                    <div className="flex gap-2">
+                                                        {renderPosiciones(varasDer, tIdx, sIdx, elem.id, elem.tipo, tramo)}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+
+                                    // ELEMENTO NORMAL (Filas de nazarenos, Pasos, Insignias simples)
+                                    return (
+                                        <div key={elem.id} className="space-y-2">
+                                            {/* Tipo de elemento */}
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-1 h-3 rounded-full ${elem.tipo === 'INSIGNIA' ? 'bg-amber-400' : elem.tipo === 'PASO' ? 'bg-purple-500' : 'bg-slate-300'}`} />
+                                                <span className="text-[9px] font-black uppercase text-slate-400 italic">
+                                                    {elem.tipo === 'INSIGNIA' ? 'Insignia' : elem.tipo === 'PASO' ? 'Paso' : 'Nazarenos'}
+                                                </span>
+                                            </div>
+
+                                            {/* Posiciones */}
+                                            <div className="flex flex-wrap gap-2">
+                                                {renderPosiciones(elem.posiciones, tIdx, sIdx, elem.id, elem.tipo, tramo)}
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        )
+                    })}
                 </div>
             ))}
 

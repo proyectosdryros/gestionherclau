@@ -78,67 +78,111 @@ export default function CortejoTab() {
                                             <div className="h-[2px] w-8 bg-slate-100 group-hover:bg-amber-100" />
                                         </button>
 
-                                        {sub.elementos.map((elem, eIdx) => (
-                                            <React.Fragment key={elem.id}>
-                                                <div className="w-full max-w-sm relative group">
-                                                    <button
-                                                        onClick={() => removeElemento(tIdx, sIdx, elem.id)}
-                                                        className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center shadow-lg hover:scale-110 z-10"
-                                                    >
-                                                        <Trash2 className="w-3.5 h-3.5" />
-                                                    </button>
+                                        {/* Especial: Layout Horizontal para Cruz de Guía */}
+                                        {tramo.numero === 0 && sub.elementos.length >= 3 ? (
+                                            <div className="flex items-center justify-center gap-12 py-4">
+                                                {[sub.elementos[1], sub.elementos[0], sub.elementos[2]].map((elem, idx) => (
+                                                    <div key={elem?.id || idx} className="flex flex-col items-center gap-3">
+                                                        <div className={`p-6 rounded-[2rem] border-2 shadow-sm flex flex-col items-center gap-2 ${idx === 1 ? 'bg-amber-100 border-amber-400 scale-110 -mt-8' : 'bg-amber-50 border-amber-200 opacity-80'}`}>
+                                                            <Disc className={`w-6 h-6 ${idx === 1 ? 'text-amber-700' : 'text-amber-600'}`} />
+                                                            <span className="text-[10px] font-black text-slate-900 uppercase italic leading-none">{elem?.nombre}</span>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => elem && removeElemento(tIdx, sIdx, elem.id)}
+                                                            className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-md hover:scale-110 opacity-0 group-hover:opacity-100 transition-all"
+                                                        >
+                                                            <Trash2 className="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            /* Layout Estándar / Otros Tramos */
+                                            sub.elementos.map((elem, eIdx) => (
+                                                <React.Fragment key={elem.id}>
+                                                    <div className="w-full max-w-sm relative group">
+                                                        <button
+                                                            onClick={() => removeElemento(tIdx, sIdx, elem.id)}
+                                                            className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center shadow-lg hover:scale-110 z-10"
+                                                        >
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </button>
 
-                                                    {elem.tipo === 'INSIGNIA' ? (
-                                                        <div className="p-6 bg-amber-50 rounded-[2rem] border-2 border-amber-200 shadow-sm flex flex-col items-center gap-2 group-hover:scale-[1.02] transition-transform">
-                                                            <div className="flex items-center gap-3">
-                                                                <Disc className="w-6 h-6 text-amber-600" />
-                                                                <span className="text-sm font-black text-slate-900 uppercase italic tracking-tighter">{elem.nombre}</span>
-                                                            </div>
-                                                            {elem.posiciones.length > 1 && (
-                                                                <div className="flex gap-2 mt-2">
-                                                                    {elem.posiciones.slice(1).map((_, vIdx) => (
-                                                                        <div key={vIdx} className="w-6 h-6 rounded-full bg-amber-200 flex items-center justify-center">
-                                                                            <Disc className="w-3 h-3 text-amber-600" />
+                                                        {elem.tipo === 'INSIGNIA' ? (
+                                                            /* INSIGNIA CON LAYOUT HORIZONTAL SI TIENE VARAS */
+                                                            elem.posiciones.length > 1 ? (
+                                                                <div className="flex flex-col items-center gap-4">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Disc className="w-4 h-4 text-amber-500" />
+                                                                        <span className="text-[10px] font-black text-slate-400 uppercase italic tracking-widest">{elem.nombre}</span>
+                                                                    </div>
+                                                                    <div className="flex items-center justify-center gap-3">
+                                                                        {/* Varas Izq */}
+                                                                        <div className="flex gap-1.5 opacity-60">
+                                                                            {Array.from({ length: Math.ceil((elem.posiciones.length - 1) / 2) }).map((_, i) => (
+                                                                                <div key={i} className="w-8 h-8 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center shadow-inner">
+                                                                                    <Disc className="w-4 h-4 text-amber-500" />
+                                                                                </div>
+                                                                            ))}
                                                                         </div>
-                                                                    ))}
-                                                                    <span className="text-[8px] font-bold text-amber-600 uppercase">+{elem.posiciones.length - 1} Varas</span>
+                                                                        {/* Insignia Central */}
+                                                                        <div className="p-6 bg-amber-50 rounded-[2.5rem] border-2 border-amber-200 shadow-md flex flex-col items-center gap-2 transform -translate-y-2">
+                                                                            <Disc className="w-8 h-8 text-amber-600" />
+                                                                            <span className="text-xs font-black text-slate-900 uppercase italic">PORTADOR</span>
+                                                                        </div>
+                                                                        {/* Varas Der */}
+                                                                        <div className="flex gap-1.5 opacity-60">
+                                                                            {Array.from({ length: Math.floor((elem.posiciones.length - 1) / 2) }).map((_, i) => (
+                                                                                <div key={i} className="w-8 h-8 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center shadow-inner">
+                                                                                    <Disc className="w-4 h-4 text-amber-500" />
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
-                                                            )}
-                                                        </div>
-                                                    ) : elem.tipo === 'PASO' ? (
-                                                        <div className="p-8 bg-purple-50 rounded-[2.5rem] border-4 border-purple-200 shadow-lg flex flex-col items-center gap-3">
-                                                            <div className="w-20 h-[2px] bg-purple-300 mb-2" />
-                                                            <span className="text-xl font-black text-purple-900 uppercase italic tracking-tighter">PASO DE {elem.nombre}</span>
-                                                            <div className="w-20 h-[2px] bg-purple-300 mt-2" />
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex gap-4">
-                                                            {elem.posiciones.map((_, i) => (
-                                                                <div key={i} className="flex-1 h-20 rounded-2xl border-2 border-slate-200 bg-white flex flex-col items-center justify-center shadow-sm group-hover:border-slate-400 transition-colors">
-                                                                    <User className="w-6 h-6 text-slate-300 mb-1" />
-                                                                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-tighter italic">Nazareno {i === 0 ? 'Izq' : 'Der'}</span>
+                                                            ) : (
+                                                                <div className="p-6 bg-amber-50 rounded-[2rem] border-2 border-amber-200 shadow-sm flex flex-col items-center gap-2 group-hover:scale-[1.02] transition-transform">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <Disc className="w-6 h-6 text-amber-600" />
+                                                                        <span className="text-sm font-black text-slate-900 uppercase italic tracking-tighter">{elem.nombre}</span>
+                                                                    </div>
                                                                 </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                            )
+                                                        ) : elem.tipo === 'PASO' ? (
+                                                            <div className="p-8 bg-purple-50 rounded-[2.5rem] border-4 border-purple-200 shadow-lg flex flex-col items-center gap-3">
+                                                                <div className="w-20 h-[2px] bg-purple-300 mb-2" />
+                                                                <span className="text-xl font-black text-purple-900 uppercase italic tracking-tighter">PASO DE {elem.nombre}</span>
+                                                                <div className="w-20 h-[2px] bg-purple-300 mt-2" />
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex gap-4">
+                                                                {elem.posiciones.map((_, i) => (
+                                                                    <div key={i} className="flex-1 h-20 rounded-2xl border-2 border-slate-200 bg-white flex flex-col items-center justify-center shadow-sm group-hover:border-slate-400 transition-colors">
+                                                                        <User className="w-6 h-6 text-slate-300 mb-1" />
+                                                                        <span className="text-[10px] font-black text-slate-900 uppercase tracking-tighter italic">Nazareno {i === 0 ? 'Izq' : 'Der'}</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
 
-                                                {/* Botón de inserción entre elementos */}
-                                                {(elem.tipo !== 'PASO') && (
-                                                    <button
-                                                        onClick={() => {
-                                                            setInsigniaData({ ...insigniaData, tramoIdx: tIdx, subIdx: sIdx, insertAt: eIdx + 1 });
-                                                            setIsInsigniaModalOpen(true);
-                                                        }}
-                                                        className="group flex items-center gap-2 text-[10px] font-black text-slate-300 hover:text-amber-500 transition-all uppercase tracking-widest"
-                                                    >
-                                                        <div className="h-[2px] w-8 bg-slate-100 group-hover:bg-amber-100" />
-                                                        <Plus className="w-3 h-3" /> Insertar Insignia
-                                                        <div className="h-[2px] w-8 bg-slate-100 group-hover:bg-amber-100" />
-                                                    </button>
-                                                )}
-                                            </React.Fragment>
-                                        ))}
+                                                    {/* Botón de inserción entre elementos */}
+                                                    {(elem.tipo !== 'PASO') && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setInsigniaData({ ...insigniaData, tramoIdx: tIdx, subIdx: sIdx, insertAt: eIdx + 1 });
+                                                                setIsInsigniaModalOpen(true);
+                                                            }}
+                                                            className="group flex items-center gap-2 text-[10px] font-black text-slate-300 hover:text-amber-500 transition-all uppercase tracking-widest"
+                                                        >
+                                                            <div className="h-[2px] w-8 bg-slate-100 group-hover:bg-amber-100" />
+                                                            <Plus className="w-3 h-3" /> Insertar Insignia
+                                                            <div className="h-[2px] w-8 bg-slate-100 group-hover:bg-amber-100" />
+                                                        </button>
+                                                    )}
+                                                </React.Fragment>
+                                            ))
+                                        )}
                                     </div>
 
                                     <div className="mt-8 flex justify-center">
