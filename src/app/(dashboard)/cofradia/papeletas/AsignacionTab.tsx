@@ -73,8 +73,14 @@ export default function AsignacionTab() {
                     if (!tramoidPapeleta || tramoidPapeleta !== tramoId) return false;
 
                     // 2. Validar TIPO de Papeleta vs TIPO de Posición
-                    // Resolvemos el precio de la papeleta
-                    const precio = precios.find(pr => pr.id === p.puestoSolicitadoId);
+                    // Resolvemos el precio de la papeleta:
+                    // Primero intentamos por ID (papeletas viejas o corregidas)
+                    // Si no, por el nombre que guardamos en observaciones
+                    const precio = precios.find(pr =>
+                        pr.id === p.puestoSolicitadoId ||
+                        (p.observaciones && p.observaciones.startsWith(pr.nombre))
+                    );
+
                     if (precio) {
                         const tipoPrecio = precio.tipo; // NAZARENO, VARA, INSIGNIA, COSTALERO, etc.
 

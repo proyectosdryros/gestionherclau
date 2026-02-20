@@ -47,11 +47,13 @@ export class VenderPapeletaUseCase {
             anio: request.anio,
             fechaSolicitud: now,
             estado: 'SOLICITADA',
-            puestoSolicitadoId: request.precioId, // Guardamos el ID del precio para control de tipos
+            puestoSolicitadoId: null, // Evitamos violación de FK papeletas_puestoSolicitadoId_fkey
             puestoAsignadoId: null,
             esAsignacionManual: false,
             tramoId: request.tramoId || null,
-            observaciones: request.observaciones || precio.nombre
+            observaciones: request.observaciones && request.observaciones !== 'Venta Directa'
+                ? `${precio.nombre} (${request.observaciones})`
+                : precio.nombre
         });
     }
 }

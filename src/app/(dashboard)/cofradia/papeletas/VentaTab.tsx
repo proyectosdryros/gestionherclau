@@ -61,7 +61,7 @@ export default function VentaTab() {
                 precioId: selectedPrecioId,
                 anio: new Date().getFullYear(),
                 tramoId: selectedTramoId,
-                observaciones: 'Venta Directa'
+                observaciones: ''
             });
             alert('¡Venta realizada con éxito!');
             setSelectedHermanoId(null);
