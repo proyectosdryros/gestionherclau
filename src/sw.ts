@@ -1,3 +1,4 @@
+/// <reference lib="webworker" />
 import { defaultCache } from "@serwist/next/browser";
 import { type PrecacheEntry, Serwist } from "serwist";
 
