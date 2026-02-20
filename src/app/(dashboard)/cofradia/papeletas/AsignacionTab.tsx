@@ -269,7 +269,7 @@ export default function AsignacionTab() {
 
                                     // ELEMENTO NORMAL (Filas de nazarenos, Pasos, Insignias simples)
                                     return (
-                                        <div key={elem.id} className="space-y-2">
+                                        <div key={elem.id} className={`space-y-2 flex flex-col ${elem.tipo === 'PASO' ? 'items-center py-6' : 'items-center'}`}>
                                             {/* Tipo de elemento */}
                                             <div className="flex items-center gap-2">
                                                 <div className={`w-1 h-3 rounded-full ${elem.tipo === 'INSIGNIA' ? 'bg-amber-400' : elem.tipo === 'PASO' ? 'bg-purple-500' : 'bg-slate-300'}`} />
@@ -278,9 +278,15 @@ export default function AsignacionTab() {
                                                 </span>
                                             </div>
 
-                                            {/* Posiciones */}
-                                            <div className="flex flex-wrap gap-2">
-                                                {renderPosiciones(elem.posiciones, tIdx, sIdx, elem.id, elem.tipo, tramo)}
+                                            {/* Posiciones o Visual del Paso */}
+                                            <div className={`flex flex-wrap gap-2 justify-center ${elem.tipo === 'PASO' ? 'scale-125' : ''}`}>
+                                                {elem.tipo === 'PASO' ? (
+                                                    <div className="bg-slate-900 text-white px-8 py-3 rounded-2xl font-black italic uppercase tracking-tighter shadow-xl shadow-slate-900/40 border-2 border-purple-500/50">
+                                                        {elem.nombre}
+                                                    </div>
+                                                ) : (
+                                                    renderPosiciones(elem.posiciones, tIdx, sIdx, elem.id, elem.tipo, tramo)
+                                                )}
                                             </div>
                                         </div>
                                     )

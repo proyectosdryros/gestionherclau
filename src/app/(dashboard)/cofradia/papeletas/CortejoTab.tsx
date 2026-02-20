@@ -149,10 +149,10 @@ export default function CortejoTab() {
                                                                 </div>
                                                             )
                                                         ) : elem.tipo === 'PASO' ? (
-                                                            <div className="p-8 bg-purple-50 rounded-[2.5rem] border-4 border-purple-200 shadow-lg flex flex-col items-center gap-3">
-                                                                <div className="w-20 h-[2px] bg-purple-300 mb-2" />
-                                                                <span className="text-xl font-black text-purple-900 uppercase italic tracking-tighter">PASO DE {elem.nombre}</span>
-                                                                <div className="w-20 h-[2px] bg-purple-300 mt-2" />
+                                                            <div className="p-10 bg-slate-900 rounded-[3rem] border-4 border-purple-500 shadow-2xl flex flex-col items-center gap-4 scale-110 my-8">
+                                                                <div className="w-24 h-[3px] bg-purple-500/30 mb-1 rounded-full" />
+                                                                <span className="text-2xl font-black text-white uppercase italic tracking-tighter text-center">PASO DE {elem.nombre}</span>
+                                                                <div className="w-24 h-[3px] bg-purple-500/30 mt-1 rounded-full" />
                                                             </div>
                                                         ) : (
                                                             <div className="flex gap-4">

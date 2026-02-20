@@ -1,3 +1,10 @@
+import withSerwistInit from "@serwist/next";
+
+const withSerwist = withSerwistInit({
+    swSrc: "src/sw.ts",
+    swDest: "public/sw.js",
+});
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     reactStrictMode: true,
@@ -10,4 +17,4 @@ const nextConfig = {
     transpilePackages: ['@react-pdf/renderer'],
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);
