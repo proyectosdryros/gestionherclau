@@ -65,18 +65,18 @@ export function PrecioForm({ precio, onSuccess, onCancel }: PrecioFormProps) {
                         {...register('tipo')}
                         className="flex h-12 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all"
                     >
-                        <option value="CUOTA text-slate-900">Cuota de Hermano</option>
-                        <option value="PAPELETA_SITIO text-slate-900">Papeleta Genérica</option>
-                        <option value="NAZARENO text-slate-900">Nazareno</option>
-                        <option value="VARA text-slate-900">Vara</option>
-                        <option value="INSIGNIA text-slate-900">Insignia</option>
-                        <option value="BOCINA text-slate-900">Bocina</option>
-                        <option value="FAROL text-slate-900">Farol</option>
-                        <option value="CRUZ_GUIA text-slate-900">Cruz de Guía</option>
-                        <option value="PAPELETA_SIMBOLICA text-slate-900">Papeleta Simbólica</option>
-                        <option value="DONATIVO text-slate-900">Donativo</option>
-                        <option value="COSTALERO text-slate-900">Papeleta Costalero</option>
-                        <option value="OTRO text-slate-900">Otro</option>
+                        <option value="CUOTA">Cuota de Hermano</option>
+                        <option value="PAPELETA_SITIO">Papeleta Genérica</option>
+                        <option value="NAZARENO">Nazareno</option>
+                        <option value="VARA">Vara</option>
+                        <option value="INSIGNIA">Insignia</option>
+                        <option value="BOCINA">Bocina</option>
+                        <option value="FAROL">Farol</option>
+                        <option value="CRUZ_GUIA">Cruz de Guía</option>
+                        <option value="PAPELETA_SIMBOLICA">Papeleta Simbólica</option>
+                        <option value="DONATIVO">Donativo</option>
+                        <option value="COSTALERO">Papeleta Costalero</option>
+                        <option value="OTRO">Otro</option>
                     </select>
                     {errors.tipo && <p className="text-sm text-red-500">{errors.tipo.message}</p>}
                 </div>
