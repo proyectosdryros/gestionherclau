@@ -39,7 +39,7 @@ function ListadoPapeletasContent() {
 
     const getNombreHermano = (id: string) => {
         const h = hermanos.find(herm => herm.id === id);
-        return h ? `${h.nombre} ${h.apellido1}` : 'Desconocido';
+        return h ? h.getNombreCompleto() : 'Desconocido';
     };
 
     const getHermano = (id: string) => {

@@ -72,7 +72,7 @@ export default function VentaPapeletasPage() {
     };
 
     const filteredHermanos = hermanos.filter(h =>
-        `${h.nombre} ${h.apellido1} ${h.numeroHermano}`.toLowerCase().includes(searchTerm.toLowerCase())
+        `${h.nombre} ${h.apellido1} ${h.apellido2 || ''} ${h.numeroHermano}`.toLowerCase().includes(searchTerm.toLowerCase())
     ).slice(0, 4);
 
     const selectedHermano = hermanos.find(h => h.id === selectedHermanoId);
@@ -119,7 +119,7 @@ export default function VentaPapeletasPage() {
                                                         {h.nombre[0]}{h.apellido1[0]}
                                                     </div>
                                                     <div>
-                                                        <p className="font-semibold text-slate-800">{h.nombre} {h.apellido1}</p>
+                                                        <p className="font-semibold text-slate-800">{h.getNombreCompleto()}</p>
                                                         <p className="text-xs text-slate-400">Hermano Nº {h.numeroHermano}</p>
                                                     </div>
                                                 </div>

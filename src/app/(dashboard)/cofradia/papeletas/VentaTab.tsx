@@ -81,7 +81,7 @@ export default function VentaTab() {
         const yaTienePapeleta = papeletas.some(p => p.hermanoId === h.id && p.anio === new Date().getFullYear());
         if (yaTienePapeleta) return false;
 
-        return `${h.nombre} ${h.apellido1} ${h.numeroHermano}`.toLowerCase().includes(searchTerm.toLowerCase());
+        return `${h.nombre} ${h.apellido1} ${h.apellido2 || ''} ${h.numeroHermano}`.toLowerCase().includes(searchTerm.toLowerCase());
     }).slice(0, 4);
 
     const selectedHermano = hermanos.find(h => h.id === selectedHermanoId);
@@ -113,7 +113,7 @@ export default function VentaTab() {
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-[10px] text-slate-500">{h.nombre[0]}{h.apellido1[0]}</div>
                                                     <div>
-                                                        <p className="font-bold text-slate-900 leading-none">{h.nombre} {h.apellido1}</p>
+                                                        <p className="font-bold text-slate-900 leading-none">{h.getNombreCompleto()}</p>
                                                         <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Hermano {h.numeroHermano}</p>
                                                     </div>
                                                 </div>

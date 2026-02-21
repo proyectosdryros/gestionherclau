@@ -261,8 +261,7 @@ export default function CuotasPage() {
                                     <tr key={h.id} className="hover:bg-slate-50/50 transition-colors">
                                         <td className="p-4 font-mono text-xs text-slate-500 font-bold">{h.numeroHermano}</td>
                                         <td className="p-4">
-                                            <p className="font-bold text-slate-900">{h.nombre} {h.apellido1}</p>
-                                            <p className="text-[10px] text-slate-500 font-medium uppercase">{h.apellido2 || ''}</p>
+                                            <p className="font-bold text-slate-900">{h.getNombreCompleto()}</p>
                                         </td>
                                         <td className="p-4 text-right">
                                             {(() => {
@@ -304,7 +303,7 @@ export default function CuotasPage() {
                                 {activeHermano.numeroHermano}
                             </div>
                             <div>
-                                <p className="text-lg font-black">{activeHermano.nombre} {activeHermano.apellido1}</p>
+                                <p className="text-lg font-black">{activeHermano.getNombreCompleto()}</p>
                                 <p className="text-xs text-slate-500 font-medium uppercase">Cuotas Hermano {currentYear}</p>
                             </div>
                         </div>

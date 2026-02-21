@@ -109,7 +109,7 @@ export function HermanosList() {
                                                 {hermano.numeroHermano}
                                             </div>
                                             <div>
-                                                <h3 className="font-bold text-slate-900 leading-tight">{hermano.nombre} {hermano.apellido1}</h3>
+                                                <h3 className="font-bold text-slate-900 leading-tight">{hermano.getNombreCompleto()}</h3>
                                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{hermano.id.slice(0, 8)}</p>
                                             </div>
                                         </div>

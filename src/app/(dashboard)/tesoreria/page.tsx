@@ -35,7 +35,7 @@ export default function TesoreriaPage() {
     });
 
     const filteredHermanos = hermanos.filter(h =>
-        `${h.nombre} ${h.apellido1}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        `${h.nombre} ${h.apellido1} ${h.apellido2 || ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
         h.numeroHermano.toString().includes(searchTerm)
     );
 
@@ -105,7 +105,7 @@ export default function TesoreriaPage() {
     // Helper to find brother name
     const getHermanoName = (id: string) => {
         const h = hermanos.find(h => h.id === id);
-        return h ? `${h.nombre} ${h.apellido1}` : id;
+        return h ? h.getNombreCompleto() : id;
     };
 
     return (
@@ -202,7 +202,7 @@ export default function TesoreriaPage() {
                                                 >
                                                     <td className="p-4 font-mono text-xs font-bold text-slate-500">{hermano.numeroHermano}</td>
                                                     <td className="p-4">
-                                                        <div className="font-bold">{hermano.nombre} {hermano.apellido1}</div>
+                                                        <div className="font-bold">{hermano.getNombreCompleto()}</div>
                                                         {totalDeuda > 0 && (
                                                             <div className="text-[10px] text-red-600 font-black uppercase tracking-tighter">
                                                                 Deuda: {formatCurrency(totalDeuda)}
@@ -307,7 +307,7 @@ export default function TesoreriaPage() {
                             <option value="">Seleccionar Hermano...</option>
                             {hermanos.map(h => (
                                 <option key={h.id} value={h.id}>
-                                    {h.numeroHermano} - {h.nombre} {h.apellido1}
+                                    {h.numeroHermano} - {h.getNombreCompleto()}
                                 </option>
                             ))}
                         </select>

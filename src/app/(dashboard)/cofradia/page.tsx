@@ -166,7 +166,7 @@ export default function CofradiaPage() {
                                             const h = hermanos.find(herm => herm.id === p.hermanoId);
                                             return (
                                                 <tr key={p.id} className="border-b hover:bg-slate-50 transition-colors">
-                                                    <td className="p-4 font-medium">{h ? `${h.nombre} ${h.apellido1}` : 'Cargando...'}</td>
+                                                    <td className="p-4 font-medium">{h ? h.getNombreCompleto() : 'Cargando...'}</td>
                                                     <td className="p-4 font-mono text-xs">{h?.numeroHermano || '-'}</td>
                                                     <td className="p-4 text-slate-500 truncate max-w-[200px]">{p.observaciones || 'Sin notas'}</td>
                                                     <td className="p-4 text-right">
@@ -207,7 +207,7 @@ export default function CofradiaPage() {
                             <option value="">Seleccionar Hermano...</option>
                             {hermanos.map(h => (
                                 <option key={h.id} value={h.id}>
-                                    {h.numeroHermano} - {h.nombre} {h.apellido1}
+                                    {h.numeroHermano} - {h.getNombreCompleto()}
                                 </option>
                             ))}
                         </select>

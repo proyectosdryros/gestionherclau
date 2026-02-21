@@ -60,7 +60,7 @@ function ConfiguracionContent() {
     }, [tabParam]);
 
     const filteredHermanos = hermanos.filter(h =>
-        `${h.nombre} ${h.apellido1} ${h.numeroHermano}`.toLowerCase().includes(searchTerm.toLowerCase())
+        `${h.nombre} ${h.apellido1} ${h.apellido2 || ''} ${h.numeroHermano}`.toLowerCase().includes(searchTerm.toLowerCase())
     ).slice(0, 5);
 
     const handleNewSeason = async () => {
@@ -290,7 +290,7 @@ function ConfiguracionContent() {
                                                                     {h.nombre[0]}{h.apellido1[0]}
                                                                 </div>
                                                                 <div>
-                                                                    <p className="font-bold text-slate-900">{h.nombre} {h.apellido1}</p>
+                                                                    <p className="font-bold text-slate-900">{h.getNombreCompleto()}</p>
                                                                     <p className="text-xs text-slate-500 font-medium tracking-tight">Nº {h.numeroHermano}</p>
                                                                 </div>
                                                             </div>

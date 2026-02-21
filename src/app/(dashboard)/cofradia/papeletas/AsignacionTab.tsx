@@ -35,7 +35,7 @@ export default function AsignacionTab() {
 
     const getHermanoName = (id: string) => {
         const h = hermanos.find(h => h.id === id);
-        return h ? `${h.nombre} ${h.apellido1}` : 'Desconocido';
+        return h ? h.getNombreCompleto() : 'Desconocido';
     };
 
     const getHermanoNumero = (id: string) => {
@@ -105,7 +105,7 @@ export default function AsignacionTab() {
             .filter(c => {
                 if (!c.hermano) return false;
                 if (!search) return true;
-                return `${c.hermano.nombre} ${c.hermano.apellido1} ${c.hermano.numeroHermano}`
+                return `${c.hermano.nombre} ${c.hermano.apellido1} ${c.hermano.apellido2 || ''} ${c.hermano.numeroHermano}`
                     .toLowerCase()
                     .includes(search.toLowerCase());
             })

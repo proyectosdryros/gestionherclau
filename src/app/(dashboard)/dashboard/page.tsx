@@ -128,7 +128,7 @@ export default function DashboardSummaryPage() {
     const recentActivities = [
         ...hermanos.map(h => ({
             id: h.id,
-            title: `Nuevo hermano: ${h.nombre} ${h.apellido1}`,
+            title: `Nuevo hermano: ${h.getNombreCompleto()}`,
             date: new Date(h.auditoria.created_at),
             module: 'Secretaría',
             color: 'bg-blue-500'

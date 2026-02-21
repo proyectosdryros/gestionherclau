@@ -67,11 +67,8 @@ export function FamiliaresList({
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                {familiar.nombre} {familiar.apellido1}
+                                {familiar.getNombreCompleto()}
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                                {familiar.apellido2}
-                            </p>
                             {familiar.fechaNacimiento && (
                                 <div className="mt-2 text-xs text-muted-foreground">
                                     Nacimiento: {format(familiar.fechaNacimiento, 'dd/MM/yyyy', { locale: es })}
