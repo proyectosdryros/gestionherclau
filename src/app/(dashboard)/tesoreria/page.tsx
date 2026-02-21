@@ -4,6 +4,7 @@
 import React, { useState, useMemo } from 'react';
 import { useRecibos } from '@/presentation/hooks/useRecibos';
 import { useHermanos } from '@/presentation/hooks/useHermanos';
+import { usePrecios } from '@/presentation/hooks/usePrecios';
 import { Card, CardHeader, CardTitle, CardContent } from '@/presentation/components/ui/Card';
 import { Button } from '@/presentation/components/ui/Button';
 import { Input } from '@/presentation/components/ui/Input';
@@ -17,6 +18,8 @@ import { CuotasGrid } from '@/presentation/components/tesoreria/CuotasGrid';
 export default function TesoreriaPage() {
     const { recibos, loading, error, registrarCobro, crearRecibo } = useRecibos();
     const { hermanos } = useHermanos(); // Load brothers for selection
+    const { precios } = usePrecios();
+    const cuotaEstandard = precios.find(p => p.clave === 'cuota_ordinaria' && p.anio === new Date().getFullYear())?.importe || 1.5;
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedHermanoId, setExpandedHermanoId] = useState<string | null>(null);
 
@@ -42,23 +45,28 @@ export default function TesoreriaPage() {
     // Agrupar recibos por hermano para la vista de cuadrícula
     const recibosPorHermano = useMemo(() => {
         const mapping: Record<string, { pagos: number[], pendientes: number[] }> = {};
-        const anioActual = 2026; // Usamos el año que estamos gestionando
+        const anioActual = new Date().getFullYear();
+
+        hermanos.forEach(h => {
+            mapping[h.id] = { pagos: [], pendientes: [] };
+        });
 
         recibos.forEach(r => {
             const rYear = new Date(r.fechaEmision).getFullYear();
-            if (rYear === anioActual && r.tipo === 'CUOTA_ORDINARIA') {
+            if (rYear === anioActual && r.tipo === 'CUOTA_ORDINARIA' && r.estado === 'COBRADO') {
                 if (!mapping[r.hermanoId]) mapping[r.hermanoId] = { pagos: [], pendientes: [] };
-
                 const month = new Date(r.fechaEmision).getMonth() + 1;
-                if (r.estado === 'COBRADO') {
-                    mapping[r.hermanoId].pagos.push(month);
-                } else if (r.estado === 'PENDIENTE') {
-                    mapping[r.hermanoId].pendientes.push(month);
-                }
+                mapping[r.hermanoId].pagos.push(month);
             }
         });
+
+        Object.keys(mapping).forEach(id => {
+            const info = mapping[id];
+            info.pendientes = Array.from({ length: 12 }, (_, i) => i + 1).filter(m => !info.pagos.includes(m));
+        });
+
         return mapping;
-    }, [recibos]);
+    }, [recibos, hermanos]);
 
     const handleOpenPayment = (id: string) => {
         setSelectedReciboId(id);
@@ -147,8 +155,13 @@ export default function TesoreriaPage() {
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-amber-600">{formatCurrency(recibos.filter(r => r.estado === 'PENDIENTE').reduce((acc, r) => acc + r.importe, 0))}</div>
-                        <p className="text-xs text-muted-foreground">Cobros pendientes</p>
+                        <div className="text-2xl font-bold text-amber-600">
+                            {formatCurrency(
+                                Object.values(recibosPorHermano).reduce((acc, curr) => acc + (curr.pendientes.length * cuotaEstandard), 0)
+                                + recibos.filter(r => r.estado === 'PENDIENTE' && r.tipo !== 'CUOTA_ORDINARIA').reduce((acc, r) => acc + r.importe, 0)
+                            )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">Cuotas y cobros pendientes</p>
                     </CardContent>
                 </Card>
             </div>
@@ -192,7 +205,7 @@ export default function TesoreriaPage() {
                                 ) : (
                                     filteredHermanos.map((hermano) => {
                                         const info = recibosPorHermano[hermano.id] || { pagos: [], pendientes: [] };
-                                        const totalDeuda = info.pendientes.length * 1.50;
+                                        const totalDeuda = info.pendientes.length * cuotaEstandard;
 
                                         return (
                                             <React.Fragment key={hermano.id}>

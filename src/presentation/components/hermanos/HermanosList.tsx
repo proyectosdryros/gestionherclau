@@ -9,6 +9,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useHermanos } from '@/presentation/hooks/useHermanos';
 import { useRecibos } from '@/presentation/hooks/useRecibos';
+import { usePrecios } from '@/presentation/hooks/usePrecios';
 import { formatCurrency } from '@/lib/utils';
 import type { EstadoHermano } from '@/core/domain/entities/Hermano';
 
@@ -22,26 +23,34 @@ export function HermanosList() {
     });
 
     const { recibos, loading: loadingRecibos } = useRecibos();
+    const { precios } = usePrecios();
+    const cuotaEstandard = precios.find(p => p.clave === 'cuota_ordinaria' && p.anio === new Date().getFullYear())?.importe || 1.5;
 
     const tesoreriaMap = useMemo(() => {
-        const map = new Map<string, { deuda: number, tieneReciboAnual: boolean }>();
+        const map = new Map<string, { deuda: number, pagosConfirmados: number }>();
         const anioActual = new Date().getFullYear();
 
-        recibos.forEach(recibo => {
-            const current = map.get(recibo.hermanoId) || { deuda: 0, tieneReciboAnual: false };
-
-            if (recibo.estado === 'PENDIENTE') {
-                current.deuda += recibo.importe;
-            }
-
-            if (recibo.tipo === 'CUOTA_ORDINARIA' && new Date(recibo.fechaEmision).getFullYear() === anioActual) {
-                current.tieneReciboAnual = true;
-            }
-
-            map.set(recibo.hermanoId, current);
+        hermanos.forEach(h => {
+            map.set(h.id, { deuda: 0, pagosConfirmados: 0 });
         });
+
+        recibos.forEach(recibo => {
+            const current = map.get(recibo.hermanoId);
+            if (!current) return;
+
+            const rYear = new Date(recibo.fechaEmision).getFullYear();
+            if (recibo.tipo === 'CUOTA_ORDINARIA' && rYear === anioActual && recibo.estado === 'COBRADO') {
+                current.pagosConfirmados += 1;
+            }
+        });
+
+        map.forEach(info => {
+            const pendingMonths = 12 - info.pagosConfirmados;
+            info.deuda = pendingMonths * cuotaEstandard;
+        });
+
         return map;
-    }, [recibos]);
+    }, [recibos, hermanos, cuotaEstandard]);
 
     const loading = loadingHermanos || loadingRecibos;
     const error = errorHermanos;
@@ -96,9 +105,9 @@ export function HermanosList() {
                     </div>
                 ) : (
                     hermanos.map((hermano) => {
-                        const info = tesoreriaMap.get(hermano.id) || { deuda: 0, tieneReciboAnual: false };
+                        const info = tesoreriaMap.get(hermano.id) || { deuda: 0, pagosConfirmados: 0 };
                         const tieneDeuda = info.deuda > 0;
-                        const estaRealmenteAlDia = info.tieneReciboAnual && !tieneDeuda;
+                        const estaRealmenteAlDia = info.pagosConfirmados === 12;
 
                         return (
                             <Link key={hermano.id} href={`/secretaria/hermanos/${hermano.id}`} className="block">
@@ -164,9 +173,9 @@ export function HermanosList() {
                     <tbody className="divide-y divide-slate-50">
                         {hermanos.map((hermano) => {
                             const antiguedad = hermano.getAntiguedad();
-                            const info = tesoreriaMap.get(hermano.id) || { deuda: 0, tieneReciboAnual: false };
+                            const info = tesoreriaMap.get(hermano.id) || { deuda: 0, pagosConfirmados: 0 };
                             const tieneDeuda = info.deuda > 0;
-                            const estaRealmenteAlDia = info.tieneReciboAnual && !tieneDeuda;
+                            const estaRealmenteAlDia = info.pagosConfirmados === 12;
 
                             return (
                                 <tr
