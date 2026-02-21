@@ -19,7 +19,7 @@ export default function TesoreriaPage() {
     const { recibos, loading, error, registrarCobro, crearRecibo } = useRecibos();
     const { hermanos } = useHermanos(); // Load brothers for selection
     const { precios } = usePrecios();
-    const cuotaEstandard = precios.find(p => p.clave === 'cuota_ordinaria' && p.anio === new Date().getFullYear())?.importe || 1.5;
+    const cuotaEstandard = precios.find(p => p.tipo === 'CUOTA' && p.anio === new Date().getFullYear())?.importe || 1.5;
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedHermanoId, setExpandedHermanoId] = useState<string | null>(null);
 

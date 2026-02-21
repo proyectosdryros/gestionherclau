@@ -24,7 +24,7 @@ export function HermanosList() {
 
     const { recibos, loading: loadingRecibos } = useRecibos();
     const { precios } = usePrecios();
-    const cuotaEstandard = precios.find(p => p.clave === 'cuota_ordinaria' && p.anio === new Date().getFullYear())?.importe || 1.5;
+    const cuotaEstandard = precios.find(p => p.tipo === 'CUOTA' && p.anio === new Date().getFullYear())?.importe || 1.5;
 
     const tesoreriaMap = useMemo(() => {
         const map = new Map<string, { deuda: number, pagosConfirmados: number }>();
