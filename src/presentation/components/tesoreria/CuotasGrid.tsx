@@ -41,7 +41,7 @@ export function CuotasGrid({ pagos, selectedMonths, monthsToDelete, onMonthClick
                                 : isPaid
                                     ? "bg-emerald-500 border-emerald-600 text-white shadow-sm hover:bg-red-500 hover:border-red-600 hover:content-['X'] transition-colors"
                                     : (isSelected
-                                        ? "bg-indigo-600 border-indigo-700 text-white ring-2 ring-indigo-200 animate-pulse"
+                                        ? "bg-amber-500 border-amber-600 text-white ring-2 ring-amber-200 animate-pulse"
                                         : "bg-slate-100 border-slate-300 text-slate-500 hover:bg-slate-200 hover:border-slate-400")
                         )}
                     >

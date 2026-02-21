@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRecibos } from '@/presentation/hooks/useRecibos';
 import { useHermanos } from '@/presentation/hooks/useHermanos';
 import { Card, CardHeader, CardTitle, CardContent } from '@/presentation/components/ui/Card';
@@ -10,8 +10,9 @@ import { Input } from '@/presentation/components/ui/Input';
 import { Badge } from '@/presentation/components/ui/Badge';
 import { Search, Plus, Filter, Wallet, MoreVertical, CreditCard } from 'lucide-react';
 import { Modal } from '@/presentation/components/ui/Modal';
-import { formatCurrency } from '@/lib/utils';
-import { TipoRecibo } from '@/core/domain/entities/Recibo';
+import { formatCurrency, cn } from '@/lib/utils';
+import { TipoRecibo, Recibo } from '@/core/domain/entities/Recibo';
+import { CuotasGrid } from '@/presentation/components/tesoreria/CuotasGrid';
 
 export default function TesoreriaPage() {
     const { recibos, loading, error, registrarCobro, crearRecibo } = useRecibos();
@@ -32,10 +33,31 @@ export default function TesoreriaPage() {
         fechaVencimiento: ''
     });
 
-    const filteredRecibos = recibos.filter(r =>
-        r.concepto.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        r.hermanoId.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredHermanos = hermanos.filter(h =>
+        `${h.nombre} ${h.apellido1}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        h.numeroHermano.toString().includes(searchTerm)
     );
+
+    // Agrupar recibos por hermano para la vista de cuadrícula
+    const recibosPorHermano = useMemo(() => {
+        const mapping: Record<string, { pagos: number[], pendientes: number[] }> = {};
+        const anioActual = 2026; // Usamos el año que estamos gestionando
+
+        recibos.forEach(r => {
+            const rYear = new Date(r.fechaEmision).getFullYear();
+            if (rYear === anioActual && r.tipo === 'CUOTA_ORDINARIA') {
+                if (!mapping[r.hermanoId]) mapping[r.hermanoId] = { pagos: [], pendientes: [] };
+
+                const month = new Date(r.fechaEmision).getMonth() + 1;
+                if (r.estado === 'COBRADO') {
+                    mapping[r.hermanoId].pagos.push(month);
+                } else if (r.estado === 'PENDIENTE') {
+                    mapping[r.hermanoId].pendientes.push(month);
+                }
+            }
+        });
+        return mapping;
+    }, [recibos]);
 
     const handleOpenPayment = (id: string) => {
         setSelectedReciboId(id);
@@ -155,49 +177,61 @@ export default function TesoreriaPage() {
                         <table className="w-full text-sm">
                             <thead className="bg-muted/50 border-b">
                                 <tr className="text-left font-medium">
+                                    <th className="p-4 w-16">Nº</th>
                                     <th className="p-4">Hermano</th>
-                                    <th className="p-4">Concepto</th>
-                                    <th className="p-4">Importe</th>
-                                    <th className="p-4">Estado</th>
+                                    <th className="p-4">Estado Cuotas 2026 (Mensual)</th>
                                     <th className="p-4 text-right">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y text-slate-900">
                                 {loading ? (
-                                    <tr><td colSpan={5} className="p-4 text-center">Cargando recibos...</td></tr>
-                                ) : filteredRecibos.length === 0 ? (
-                                    <tr><td colSpan={5} className="p-4 text-center">No hay recibos pendientes.</td></tr>
+                                    <tr><td colSpan={4} className="p-4 text-center">Cargando datos...</td></tr>
+                                ) : filteredHermanos.length === 0 ? (
+                                    <tr><td colSpan={4} className="p-4 text-center">No se encontraron hermanos.</td></tr>
                                 ) : (
-                                    filteredRecibos.map((recibo) => (
-                                        <tr key={recibo.id} className="hover:bg-muted/40 transition-colors">
-                                            <td className="p-4 font-mono text-xs">{getHermanoName(recibo.hermanoId)}</td>
-                                            <td className="p-4">{recibo.concepto}</td>
-                                            <td className="p-4 font-medium">{formatCurrency(recibo.importe)}</td>
-                                            <td className="p-4">
-                                                <Badge variant={
-                                                    recibo.estado === 'COBRADO' ? 'success' :
-                                                        recibo.estado === 'PENDIENTE' ? 'warning' : 'destructive'
-                                                }>
-                                                    {recibo.estado}
-                                                </Badge>
-                                            </td>
-                                            <td className="p-4 text-right">
-                                                {recibo.estado === 'PENDIENTE' && (
+                                    filteredHermanos.map((hermano) => {
+                                        const info = recibosPorHermano[hermano.id] || { pagos: [], pendientes: [] };
+                                        const totalDeuda = info.pendientes.length * 1.50;
+
+                                        return (
+                                            <tr key={hermano.id} className="hover:bg-muted/40 transition-colors">
+                                                <td className="p-4 font-mono text-xs font-bold text-slate-500">{hermano.numeroHermano}</td>
+                                                <td className="p-4">
+                                                    <div className="font-bold">{hermano.nombre} {hermano.apellido1}</div>
+                                                    {totalDeuda > 0 && (
+                                                        <div className="text-[10px] text-red-600 font-black uppercase tracking-tighter">
+                                                            Deuda: {formatCurrency(totalDeuda)}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td className="p-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <CuotasGrid
+                                                            pagos={info.pagos}
+                                                            selectedMonths={info.pendientes} // Usamos selected para los pendientes en naranja
+                                                            onMonthClick={() => {
+                                                                // Redirigir a la gestión de cuotas detallada o abrir modal
+                                                                window.location.href = '/tesoreria/cuotas';
+                                                            }}
+                                                        />
+                                                        <span className="text-[10px] font-bold text-slate-400 ml-2">
+                                                            {info.pagos.length}/12
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 text-right">
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="text-green-500 hover:text-green-600 hover:bg-green-500/10"
-                                                        onClick={() => handleOpenPayment(recibo.id)}
+                                                        className="text-indigo-600 font-bold"
+                                                        onClick={() => window.location.href = '/tesoreria/cuotas'}
                                                     >
-                                                        Cobrar en Mano
+                                                        Gestionar
                                                     </Button>
-                                                )}
-                                                <Button variant="ghost" size="icon">
-                                                    <MoreVertical className="h-4 w-4" />
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                    ))
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>
