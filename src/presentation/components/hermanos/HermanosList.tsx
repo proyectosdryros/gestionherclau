@@ -8,16 +8,34 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useHermanos } from '@/presentation/hooks/useHermanos';
+import { useRecibos } from '@/presentation/hooks/useRecibos';
+import { formatCurrency } from '@/lib/utils';
 import type { EstadoHermano } from '@/core/domain/entities/Hermano';
 
 export function HermanosList() {
     const [search, setSearch] = useState('');
     const [estadoFilter, setEstadoFilter] = useState<EstadoHermano | undefined>();
 
-    const { hermanos, total, loading, error } = useHermanos({
+    const { hermanos, total, loading: loadingHermanos, error: errorHermanos } = useHermanos({
         search,
         estado: estadoFilter,
     });
+
+    const { recibos, loading: loadingRecibos } = useRecibos();
+
+    const deudasMap = useMemo(() => {
+        const map = new Map<string, number>();
+        recibos.forEach(recibo => {
+            if (recibo.estado === 'PENDIENTE') {
+                const current = map.get(recibo.hermanoId) || 0;
+                map.set(recibo.hermanoId, current + recibo.importe);
+            }
+        });
+        return map;
+    }, [recibos]);
+
+    const loading = loadingHermanos || loadingRecibos;
+    const error = errorHermanos;
 
     if (loading) {
         return (
@@ -38,7 +56,6 @@ export function HermanosList() {
 
     return (
         <div className="space-y-4">
-            {/* Filtros */}
             {/* Filtros */}
             <div className="flex flex-col sm:flex-row gap-4 bg-card p-4 rounded-2xl border border-slate-100 shadow-sm">
                 <input
@@ -69,45 +86,50 @@ export function HermanosList() {
                         No se encontraron hermanos
                     </div>
                 ) : (
-                    hermanos.map((hermano) => (
-                        <Link key={hermano.id} href={`/secretaria/hermanos/${hermano.id}`} className="block">
-                            <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm active:scale-[0.98] transition-all">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center font-black text-primary text-sm">
-                                            {hermano.numeroHermano}
+                    hermanos.map((hermano) => {
+                        const deuda = deudasMap.get(hermano.id) || 0;
+                        return (
+                            <Link key={hermano.id} href={`/secretaria/hermanos/${hermano.id}`} className="block">
+                                <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm active:scale-[0.98] transition-all">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center font-black text-primary text-sm">
+                                                {hermano.numeroHermano}
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-slate-900 leading-tight">{hermano.nombre} {hermano.apellido1}</h3>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{hermano.id.slice(0, 8)}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h3 className="font-bold text-slate-900 leading-tight">{hermano.nombre} {hermano.apellido1}</h3>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{hermano.id.slice(0, 8)}</p>
+                                        <span
+                                            className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${hermano.estado === 'ACTIVO'
+                                                ? 'bg-green-100 text-green-700'
+                                                : hermano.estado === 'BAJA_TEMPORAL'
+                                                    ? 'bg-amber-100 text-amber-700'
+                                                    : 'bg-slate-100 text-slate-700'
+                                                }`}
+                                        >
+                                            {hermano.estado}
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Antigüedad</p>
+                                            <p className="text-sm font-bold text-slate-700">{hermano.getAntiguedad().toString()}</p>
+                                        </div>
+                                        <div className="space-y-1 text-right">
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Cuotas</p>
+                                            {deuda === 0 ? (
+                                                <p className="text-sm font-bold text-green-600">✓ AL DÍA</p>
+                                            ) : (
+                                                <p className="text-sm font-bold text-red-600 whitespace-nowrap">✗ DEBE {formatCurrency(deuda)}</p>
+                                            )}
                                         </div>
                                     </div>
-                                    <span
-                                        className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${hermano.estado === 'ACTIVO'
-                                            ? 'bg-green-100 text-green-700'
-                                            : hermano.estado === 'BAJA_TEMPORAL'
-                                                ? 'bg-amber-100 text-amber-700'
-                                                : 'bg-slate-100 text-slate-700'
-                                            }`}
-                                    >
-                                        {hermano.estado}
-                                    </span>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Antigüedad</p>
-                                        <p className="text-sm font-bold text-slate-700">{hermano.getAntiguedad().toString()}</p>
-                                    </div>
-                                    <div className="space-y-1 text-right">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Cuotas</p>
-                                        <p className={`text-sm font-bold ${hermano.cuotasAlDia ? 'text-green-600' : 'text-red-600'}`}>
-                                            {hermano.cuotasAlDia ? '✓ Al día' : '✗ Pendiente'}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </Link>
-                    ))
+                            </Link>
+                        );
+                    })
                 )}
             </div>
 
@@ -121,13 +143,14 @@ export function HermanosList() {
                             <th className="text-left px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">DNI</th>
                             <th className="text-left px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Antigüedad</th>
                             <th className="text-left px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Estado</th>
-                            <th className="text-left px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Cuotas</th>
+                            <th className="text-left px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Tesoreria</th>
                             <th className="text-right px-6 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Acciones</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                         {hermanos.map((hermano) => {
                             const antiguedad = hermano.getAntiguedad();
+                            const deuda = deudasMap.get(hermano.id) || 0;
                             return (
                                 <tr
                                     key={hermano.id}
@@ -150,10 +173,14 @@ export function HermanosList() {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4">
-                                        {hermano.cuotasAlDia ? (
-                                            <span className="text-green-600 font-bold text-sm">✓ Al día</span>
+                                        {deuda === 0 ? (
+                                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-green-50 text-green-600 text-[10px] font-black shadow-sm border border-green-100">
+                                                ✓ AL DÍA
+                                            </span>
                                         ) : (
-                                            <span className="text-red-500 font-bold text-sm italic underline decoration-red-200">✗ Pendiente</span>
+                                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-red-50 text-red-600 text-[10px] font-black shadow-sm border border-red-100 animate-pulse">
+                                                ✗ DEUDA: {formatCurrency(deuda)}
+                                            </span>
                                         )}
                                     </td>
                                     <td className="px-6 py-4 text-right">
