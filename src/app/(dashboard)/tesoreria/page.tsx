@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/presentation/compone
 import { Button } from '@/presentation/components/ui/Button';
 import { Input } from '@/presentation/components/ui/Input';
 import { Badge } from '@/presentation/components/ui/Badge';
-import { Search, Plus, Filter, Wallet, MoreVertical, CreditCard } from 'lucide-react';
+import { Search, Plus, Filter, Wallet, MoreVertical, CreditCard, ChevronDown, ChevronUp } from 'lucide-react';
 import { Modal } from '@/presentation/components/ui/Modal';
 import { formatCurrency, cn } from '@/lib/utils';
 import { TipoRecibo, Recibo } from '@/core/domain/entities/Recibo';
@@ -18,6 +18,7 @@ export default function TesoreriaPage() {
     const { recibos, loading, error, registrarCobro, crearRecibo } = useRecibos();
     const { hermanos } = useHermanos(); // Load brothers for selection
     const [searchTerm, setSearchTerm] = useState('');
+    const [expandedHermanoId, setExpandedHermanoId] = useState<string | null>(null);
 
     // Payment Modal State
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -194,42 +195,79 @@ export default function TesoreriaPage() {
                                         const totalDeuda = info.pendientes.length * 1.50;
 
                                         return (
-                                            <tr key={hermano.id} className="hover:bg-muted/40 transition-colors">
-                                                <td className="p-4 font-mono text-xs font-bold text-slate-500">{hermano.numeroHermano}</td>
-                                                <td className="p-4">
-                                                    <div className="font-bold">{hermano.nombre} {hermano.apellido1}</div>
-                                                    {totalDeuda > 0 && (
-                                                        <div className="text-[10px] text-red-600 font-black uppercase tracking-tighter">
-                                                            Deuda: {formatCurrency(totalDeuda)}
+                                            <React.Fragment key={hermano.id}>
+                                                <tr
+                                                    className="hover:bg-muted/40 transition-colors cursor-pointer"
+                                                    onClick={() => setExpandedHermanoId(expandedHermanoId === hermano.id ? null : hermano.id)}
+                                                >
+                                                    <td className="p-4 font-mono text-xs font-bold text-slate-500">{hermano.numeroHermano}</td>
+                                                    <td className="p-4">
+                                                        <div className="font-bold">{hermano.nombre} {hermano.apellido1}</div>
+                                                        {totalDeuda > 0 && (
+                                                            <div className="text-[10px] text-red-600 font-black uppercase tracking-tighter">
+                                                                Deuda: {formatCurrency(totalDeuda)}
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden max-w-[150px]">
+                                                                <div
+                                                                    className={cn("h-full", info.pagos.length === 12 ? "bg-emerald-500" : "bg-amber-500")}
+                                                                    style={{ width: `${(info.pagos.length / 12) * 100}%` }}
+                                                                />
+                                                            </div>
+                                                            <span className="text-[10px] items-center flex font-bold text-slate-400">
+                                                                {info.pagos.length}/12
+                                                            </span>
                                                         </div>
-                                                    )}
-                                                </td>
-                                                <td className="p-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <CuotasGrid
-                                                            pagos={info.pagos}
-                                                            selectedMonths={info.pendientes} // Usamos selected para los pendientes en naranja
-                                                            onMonthClick={() => {
-                                                                // Redirigir a la gestión de cuotas detallada o abrir modal
-                                                                window.location.href = '/tesoreria/cuotas';
-                                                            }}
-                                                        />
-                                                        <span className="text-[10px] font-bold text-slate-400 ml-2">
-                                                            {info.pagos.length}/12
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="p-4 text-right">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="text-indigo-600 font-bold"
-                                                        onClick={() => window.location.href = '/tesoreria/cuotas'}
-                                                    >
-                                                        Gestionar
-                                                    </Button>
-                                                </td>
-                                            </tr>
+                                                    </td>
+                                                    <td className="p-4 text-right">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="text-slate-400 p-0 hover:bg-transparent hover:text-slate-700"
+                                                        >
+                                                            {expandedHermanoId === hermano.id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                                                        </Button>
+                                                    </td>
+                                                </tr>
+                                                {expandedHermanoId === hermano.id && (
+                                                    <tr className="bg-slate-50 border-b-0">
+                                                        <td colSpan={4} className="p-6">
+                                                            <div className="flex flex-col gap-4">
+                                                                <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                                                                    <div>
+                                                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Resumen Cuotas 2026</p>
+                                                                        <CuotasGrid
+                                                                            pagos={info.pagos}
+                                                                            selectedMonths={info.pendientes} // Naranja para pendientes
+                                                                        />
+                                                                    </div>
+                                                                    <div className="text-right flex flex-col items-end gap-2">
+                                                                        {totalDeuda > 0 ? (
+                                                                            <Badge variant="destructive" className="font-black text-xs px-3">Deuda: {formatCurrency(totalDeuda)}</Badge>
+                                                                        ) : (
+                                                                            <Badge variant="success" className="font-black text-xs px-3">Al Día</Badge>
+                                                                        )}
+                                                                        <Button
+                                                                            size="sm"
+                                                                            className="bg-indigo-600 hover:bg-indigo-700 text-xs font-bold mt-1"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                window.location.href = '/tesoreria/cuotas';
+                                                                            }}
+                                                                        >
+                                                                            <CreditCard className="w-3 h-3 mr-2" />
+                                                                            Gestionar Pagos
+                                                                        </Button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                            </React.Fragment>
                                         );
                                     })
                                 )}
