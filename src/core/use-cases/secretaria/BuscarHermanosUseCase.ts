@@ -47,6 +47,9 @@ export class BuscarHermanosUseCase {
             });
         }
 
+        // Ordenar siempre por número de hermano de menor a mayor
+        hermanos.sort((a, b) => a.numeroHermano - b.numeroHermano);
+
         return {
             hermanos,
             total: hermanos.length,
