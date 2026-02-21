@@ -70,7 +70,7 @@ export default function CuotasPage() {
         return hermanos.filter(h =>
             `${h.nombre} ${h.apellido1} ${h.apellido2 || ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
             h.numeroHermano.toString().includes(searchTerm)
-        ).slice(0, 50); // Limit results for performance
+        );
     }, [hermanos, searchTerm]);
 
     // Map paid months for each brother (only current year) - Using 1-12 indexing
