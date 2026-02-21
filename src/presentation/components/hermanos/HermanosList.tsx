@@ -23,13 +23,22 @@ export function HermanosList() {
 
     const { recibos, loading: loadingRecibos } = useRecibos();
 
-    const deudasMap = useMemo(() => {
-        const map = new Map<string, number>();
+    const tesoreriaMap = useMemo(() => {
+        const map = new Map<string, { deuda: number, tieneReciboAnual: boolean }>();
+        const anioActual = new Date().getFullYear();
+
         recibos.forEach(recibo => {
+            const current = map.get(recibo.hermanoId) || { deuda: 0, tieneReciboAnual: false };
+
             if (recibo.estado === 'PENDIENTE') {
-                const current = map.get(recibo.hermanoId) || 0;
-                map.set(recibo.hermanoId, current + recibo.importe);
+                current.deuda += recibo.importe;
             }
+
+            if (recibo.tipo === 'CUOTA_ORDINARIA' && new Date(recibo.fechaEmision).getFullYear() === anioActual) {
+                current.tieneReciboAnual = true;
+            }
+
+            map.set(recibo.hermanoId, current);
         });
         return map;
     }, [recibos]);
@@ -87,7 +96,10 @@ export function HermanosList() {
                     </div>
                 ) : (
                     hermanos.map((hermano) => {
-                        const deuda = deudasMap.get(hermano.id) || 0;
+                        const info = tesoreriaMap.get(hermano.id) || { deuda: 0, tieneReciboAnual: false };
+                        const tieneDeuda = info.deuda > 0;
+                        const estaRealmenteAlDia = info.tieneReciboAnual && !tieneDeuda;
+
                         return (
                             <Link key={hermano.id} href={`/secretaria/hermanos/${hermano.id}`} className="block">
                                 <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm active:scale-[0.98] transition-all">
@@ -119,10 +131,12 @@ export function HermanosList() {
                                         </div>
                                         <div className="space-y-1 text-right">
                                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Cuotas</p>
-                                            {deuda === 0 ? (
+                                            {estaRealmenteAlDia ? (
                                                 <p className="text-sm font-bold text-green-600">✓ AL DÍA</p>
+                                            ) : tieneDeuda ? (
+                                                <p className="text-sm font-bold text-red-600 whitespace-nowrap">✗ DEBE {formatCurrency(info.deuda)}</p>
                                             ) : (
-                                                <p className="text-sm font-bold text-red-600 whitespace-nowrap">✗ DEBE {formatCurrency(deuda)}</p>
+                                                <p className="text-sm font-bold text-amber-600">⚠ SIN RECIBO</p>
                                             )}
                                         </div>
                                     </div>
@@ -150,7 +164,10 @@ export function HermanosList() {
                     <tbody className="divide-y divide-slate-50">
                         {hermanos.map((hermano) => {
                             const antiguedad = hermano.getAntiguedad();
-                            const deuda = deudasMap.get(hermano.id) || 0;
+                            const info = tesoreriaMap.get(hermano.id) || { deuda: 0, tieneReciboAnual: false };
+                            const tieneDeuda = info.deuda > 0;
+                            const estaRealmenteAlDia = info.tieneReciboAnual && !tieneDeuda;
+
                             return (
                                 <tr
                                     key={hermano.id}
@@ -173,13 +190,17 @@ export function HermanosList() {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4">
-                                        {deuda === 0 ? (
+                                        {estaRealmenteAlDia ? (
                                             <span className="inline-flex items-center px-3 py-1 rounded-full bg-green-50 text-green-600 text-[10px] font-black shadow-sm border border-green-100">
                                                 ✓ AL DÍA
                                             </span>
-                                        ) : (
+                                        ) : tieneDeuda ? (
                                             <span className="inline-flex items-center px-3 py-1 rounded-full bg-red-50 text-red-600 text-[10px] font-black shadow-sm border border-red-100 animate-pulse">
-                                                ✗ DEUDA: {formatCurrency(deuda)}
+                                                ✗ DEUDA: {formatCurrency(info.deuda)}
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-amber-50 text-amber-600 text-[10px] font-black shadow-sm border border-amber-100">
+                                                ⚠ PEND. FACTURAR
                                             </span>
                                         )}
                                     </td>

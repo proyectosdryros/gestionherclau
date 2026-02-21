@@ -12,7 +12,9 @@ import { Modal } from '@/presentation/components/ui/Modal';
 import { HermanoForm } from '@/presentation/components/hermanos/HermanoForm';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { PencilIcon, ArrowLeftIcon } from 'lucide-react'; // I need to check if lucide-react is installed, usually is in shadcn
+import { PencilIcon, ArrowLeftIcon } from 'lucide-react';
+import { useRecibos } from '@/presentation/hooks/useRecibos';
+import { formatCurrency } from '@/lib/utils';
 
 // Instanciar dependencias
 import { InsForgeHermanoRepository } from '@/infrastructure/repositories/insforge/InsForgeHermanoRepository';
@@ -54,6 +56,23 @@ export function HermanoDetailClient({ id }: HermanoDetailClientProps) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+    const { recibos, loading: loadingRecibos } = useRecibos();
+
+    const infoTesoreria = useMemo(() => {
+        const anioActual = new Date().getFullYear();
+        const recibosHermano = recibos.filter(r => r.hermanoId === id);
+
+        const deuda = recibosHermano
+            .filter(r => r.estado === 'PENDIENTE')
+            .reduce((sum, r) => sum + r.importe, 0);
+
+        const tieneReciboAnual = recibosHermano.some(r =>
+            r.tipo === 'CUOTA_ORDINARIA' && new Date(r.fechaEmision).getFullYear() === anioActual
+        );
+
+        return { deuda, tieneReciboAnual };
+    }, [recibos, id]);
 
     const loadHermano = useCallback(async () => {
         try {
@@ -225,9 +244,17 @@ export function HermanoDetailClient({ id }: HermanoDetailClientProps) {
                             </div>
                             <div>
                                 <h4 className="text-sm font-medium text-gray-500">Cuotas</h4>
-                                <p className={`mt-1 font-medium ${hermano.cuotasAlDia ? 'text-green-600' : 'text-red-600'}`}>
-                                    {hermano.cuotasAlDia ? 'Al día' : 'Pendientes'}
-                                </p>
+                                {infoTesoreria.tieneReciboAnual && infoTesoreria.deuda === 0 ? (
+                                    <p className="mt-1 font-bold text-green-600">✓ Al día</p>
+                                ) : infoTesoreria.deuda > 0 ? (
+                                    <p className="mt-1 font-bold text-red-600 animate-pulse">
+                                        ✗ Deuda: {formatCurrency(infoTesoreria.deuda)}
+                                    </p>
+                                ) : (
+                                    <p className="mt-1 font-bold text-amber-600">
+                                        ⚠ Pendiente de emitir cuota
+                                    </p>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
