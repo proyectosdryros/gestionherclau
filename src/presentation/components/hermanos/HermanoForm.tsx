@@ -8,13 +8,13 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { HermanoCreateSchema, type HermanoCreateDTO } from '@/lib/validations/hermano.schemas';
-import { DexieHermanoRepository } from '@/infrastructure/repositories/indexeddb/DexieHermanoRepository';
+import { InsForgeHermanoRepository } from '@/infrastructure/repositories/insforge/InsForgeHermanoRepository';
 import { RegistrarHermanoUseCase } from '@/core/use-cases/secretaria/RegistrarHermanoUseCase';
 import { ActualizarHermanoUseCase } from '@/core/use-cases/secretaria/ActualizarHermanoUseCase';
 import type { Hermano } from '@/core/domain/entities/Hermano';
 import { useState } from 'react';
 
-const repository = new DexieHermanoRepository();
+const repository = new InsForgeHermanoRepository();
 const registrarUseCase = new RegistrarHermanoUseCase(repository);
 const actualizarUseCase = new ActualizarHermanoUseCase(repository);
 
