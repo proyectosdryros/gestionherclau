@@ -126,6 +126,18 @@ export class InsForgeHermanoRepository implements HermanoRepository {
         return this.mapToDomain(data);
     }
 
+    async updateMany(hermanos: Hermano[]): Promise<void> {
+        if (hermanos.length === 0) return;
+        const persistenceData = hermanos.map(h => this.mapToPersistence(h));
+        const { error } = await insforge.database
+            .from('hermanos')
+            .upsert(persistenceData);
+
+        if (error) {
+            throw new Error(`Error updating multiple hermanos: ${error.message}`);
+        }
+    }
+
     async delete(id: string): Promise<void> {
         // Soft delete - cambiar estado a BAJA_VOLUNTARIA
         const hermano = await this.findById(id);

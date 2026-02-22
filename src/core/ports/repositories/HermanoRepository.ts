@@ -52,6 +52,11 @@ export interface HermanoRepository {
     update(hermano: Hermano): Promise<Hermano>;
 
     /**
+     * Actualiza múltiples hermanos de forma masiva
+     */
+    updateMany(hermanos: Hermano[]): Promise<void>;
+
+    /**
      * Elimina un hermano (soft delete - cambiar estado a BAJA_VOLUNTARIA)
      */
     delete(id: string): Promise<void>;

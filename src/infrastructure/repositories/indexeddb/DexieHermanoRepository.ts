@@ -192,6 +192,37 @@ export class DexieHermanoRepository implements HermanoRepository {
         return dtoToEntity(dto);
     }
 
+    async updateMany(hermanos: Hermano[]): Promise<void> {
+        if (hermanos.length === 0) return;
+        const dtos = hermanos.map(entityToDto);
+        const now = new Date();
+
+        dtos.forEach(dto => {
+            dto.auditoria.updated_at = now;
+            dto.auditoria.version++;
+        });
+
+        await db.transaction('rw', [db.hermanos, db.syncQueue], async () => {
+            await db.hermanos.bulkPut(dtos);
+            // Sync queue para cada uno (se podría optimizar más pero para compatibilidad...)
+            for (const dto of dtos) {
+                await db.syncQueue.add({
+                    id: uuidv7(),
+                    entityType: 'hermano',
+                    entityId: dto.id,
+                    operation: 'UPDATE',
+                    payload: JSON.stringify(dto),
+                    localTimestamp: Date.now(),
+                    serverTimestamp: null,
+                    attempts: 0,
+                    priority: 'normal',
+                    status: 'pending',
+                    nextRetryAt: null,
+                });
+            }
+        });
+    }
+
     async delete(id: string): Promise<void> {
         // Soft delete - cambiar estado a BAJA_VOLUNTARIA
         const hermano = await this.findById(id);
