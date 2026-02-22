@@ -149,9 +149,9 @@ export function HermanoDetailClient({ id }: HermanoDetailClientProps) {
             await eliminarHermanoUseCase.execute(hermano.id);
             await loadHermano();
             alert('Hermano dado de baja correctamente.');
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error deleting hermano:', error);
-            alert('Error al dar de baja al hermano.');
+            alert(`Error al dar de baja al hermano: ${error.message || 'Error desconocido'}`);
         } finally {
             setIsDeleting(false);
         }

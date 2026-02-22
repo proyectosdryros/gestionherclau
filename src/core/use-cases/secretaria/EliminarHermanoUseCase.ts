@@ -1,6 +1,6 @@
 /**
  * Use Case: Eliminar Hermano
- * Realiza una baja (soft delete) del hermano y renumera a los demás
+ * Realiza una baja (soft delete) del hermano y renumera a todos los demás hermanos con número superior
  */
 
 import { HermanoRepository } from '@/core/ports/repositories/HermanoRepository';
@@ -18,26 +18,25 @@ export class EliminarHermanoUseCase {
         const numeroEliminado = hermanoADeliminar.numeroHermano;
 
         // 2. Ejecutar la baja
-        // IMPORTANTE: Para evitar conflictos de unicidad en numeroHermano, 
-        // primero movemos al hermano que se va a dar de baja a un número muy alto
-        // y le cambiamos el estado.
+        // Movemos al hermano a un rango "muerto" y le cambiamos el estado.
+        // Esto libera su número actual de forma inmediata.
         const hermanoBaja = hermanoADeliminar.update({
             estado: 'BAJA_VOLUNTARIA',
-            numeroHermano: 900000 + numeroEliminado // Fuera del rango normal
+            numeroHermano: 990000 + numeroEliminado // Usamos un rango seguro
         });
         await this.hermanoRepository.update(hermanoBaja);
 
-        // 3. Obtener todos los hermanos ACTIVOS para renumerar
-        const todosLosHermanos = await this.hermanoRepository.findAll({ estado: 'ACTIVO' });
+        // 3. Obtener ABSOLUTAMENTE TODOS los hermanos (sin filtrar por estado)
+        // para asegurar que no dejamos huecos ni creamos conflictos con bajas temporales, etc.
+        const todosLosHermanos = await this.hermanoRepository.findAll();
 
-        // 4. Identificar quiénes necesitan un número nuevo (los que tenían un número mayor al eliminado)
-        // Ordenamos por número actual de forma ACENDENTE para ir llenando los huecos de abajo hacia arriba
-        // Esto evita conflictos de "número ya ocupado" durante el proceso.
+        // 4. Identificar quiénes tienen un número mayor al eliminado
+        // Ordenamos estrictamente por número ASCENDENTE para evitar conflictos de clave única (unique constraint)
         const aRenumerar = todosLosHermanos
-            .filter(h => h.numeroHermano > numeroEliminado)
+            .filter(h => h.numeroHermano > numeroEliminado && h.numeroHermano < 990000)
             .sort((a, b) => a.numeroHermano - b.numeroHermano);
 
-        // 5. Actualizar uno a uno
+        // 5. Actualizar uno a uno en cascada
         for (const hermano of aRenumerar) {
             const hermanoActualizado = hermano.update({
                 numeroHermano: hermano.numeroHermano - 1
