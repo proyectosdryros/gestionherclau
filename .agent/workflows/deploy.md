@@ -28,7 +28,9 @@ Para cada subida a producción, se deben seguir estos pasos:
     ```powershell
     git add .
     git commit -m "mensaje descriptivo vX.X.XX"
+    git tag vX.X.XX
     git push origin main
+    git push origin --tags
     ```
 
 ## 📝 Registro de Tareas
