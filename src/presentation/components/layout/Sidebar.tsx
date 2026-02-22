@@ -21,7 +21,8 @@ import {
     CalendarDays,
     UserCircle,
     Ticket,
-    BarChart3
+    BarChart3,
+    HandCoins
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRole } from '@/presentation/hooks/useRole';
@@ -62,6 +63,7 @@ const navItems = [
         ]
     },
     { name: 'Priostía', href: '/priostia', icon: Package, adminOnly: true },
+    { name: 'Cobrador', href: '/cobrador', icon: HandCoins, adminOnly: true },
     { name: 'Mi Perfil', href: '/perfil', icon: UserCircle, hermanoOnly: true },
 ];
 
