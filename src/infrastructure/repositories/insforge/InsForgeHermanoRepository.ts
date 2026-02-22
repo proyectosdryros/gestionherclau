@@ -127,14 +127,14 @@ export class InsForgeHermanoRepository implements HermanoRepository {
     }
 
     async delete(id: string): Promise<void> {
-        const { error } = await insforge.database
-            .from('hermanos')
-            .delete()
-            .eq('id', id);
-
-        if (error) {
-            throw new Error(`Error deleting hermano: ${error.message}`);
+        // Soft delete - cambiar estado a BAJA_VOLUNTARIA
+        const hermano = await this.findById(id);
+        if (!hermano) {
+            throw new Error(`Hermano con ID ${id} no encontrado`);
         }
+
+        const updated = hermano.update({ estado: 'BAJA_VOLUNTARIA' });
+        await this.update(updated);
     }
 
     async getNextNumeroHermano(): Promise<number> {

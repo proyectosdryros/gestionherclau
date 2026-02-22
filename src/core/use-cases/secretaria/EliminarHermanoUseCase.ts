@@ -17,14 +17,22 @@ export class EliminarHermanoUseCase {
 
         const numeroEliminado = hermanoADeliminar.numeroHermano;
 
-        // 2. Ejecutar la baja (soft delete -> BAJA_VOLUNTARIA)
-        await this.hermanoRepository.delete(id);
+        // 2. Ejecutar la baja
+        // IMPORTANTE: Para evitar conflictos de unicidad en numeroHermano, 
+        // primero movemos al hermano que se va a dar de baja a un número muy alto
+        // y le cambiamos el estado.
+        const hermanoBaja = hermanoADeliminar.update({
+            estado: 'BAJA_VOLUNTARIA',
+            numeroHermano: 900000 + numeroEliminado // Fuera del rango normal
+        });
+        await this.hermanoRepository.update(hermanoBaja);
 
         // 3. Obtener todos los hermanos ACTIVOS para renumerar
-        // Filtramos por ACTIVO para que la numeración solo aplique a los que están en alta
         const todosLosHermanos = await this.hermanoRepository.findAll({ estado: 'ACTIVO' });
 
         // 4. Identificar quiénes necesitan un número nuevo (los que tenían un número mayor al eliminado)
+        // Ordenamos por número actual de forma ACENDENTE para ir llenando los huecos de abajo hacia arriba
+        // Esto evita conflictos de "número ya ocupado" durante el proceso.
         const aRenumerar = todosLosHermanos
             .filter(h => h.numeroHermano > numeroEliminado)
             .sort((a, b) => a.numeroHermano - b.numeroHermano);
