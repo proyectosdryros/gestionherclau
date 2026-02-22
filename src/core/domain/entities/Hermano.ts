@@ -67,10 +67,10 @@ export class Hermano {
     /**
      * Crea una copia del hermano con campos actualizados
      */
-    update(updates: Partial<Omit<Hermano, 'id' | 'numeroHermano' | 'auditoria'>>): Hermano {
+    update(updates: Partial<Omit<Hermano, 'id' | 'auditoria'>>): Hermano {
         return new Hermano(
             this.id,
-            this.numeroHermano,
+            updates.numeroHermano !== undefined ? updates.numeroHermano : this.numeroHermano,
             updates.nombre ?? this.nombre,
             updates.apellido1 ?? this.apellido1,
             updates.apellido2 !== undefined ? updates.apellido2 : this.apellido2,
