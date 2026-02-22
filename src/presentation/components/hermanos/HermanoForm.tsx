@@ -40,6 +40,7 @@ export function HermanoForm({ hermano, onSuccess, onCancel }: HermanoFormProps) 
             ? {
                 nombre: hermano.nombre,
                 apodo: (hermano as any).apodo ?? null,
+                direccion: (hermano as any).direccion ?? null,
                 apellido1: hermano.apellido1,
                 apellido2: hermano.apellido2 ?? null,
                 dni: hermano.dni?.getValue() ?? null,
@@ -137,6 +138,23 @@ export function HermanoForm({ hermano, onSuccess, onCancel }: HermanoFormProps) 
                         />
                         {errors.apodo && (
                             <p className="text-[10px] text-red-500 mt-0.5">{errors.apodo.message}</p>
+                        )}
+                    </div>
+
+                    {/* Dirección */}
+                    <div className="sm:col-span-2">
+                        <label htmlFor="direccion" className="block text-xs font-medium mb-1 text-muted-foreground">
+                            Dirección
+                        </label>
+                        <input
+                            {...register('direccion')}
+                            id="direccion"
+                            type="text"
+                            className="w-full px-2 py-1.5 border rounded-md bg-background text-sm"
+                            placeholder="C/ Real, 10, 2ºA"
+                        />
+                        {errors.direccion && (
+                            <p className="text-[10px] text-red-500 mt-0.5">{errors.direccion.message}</p>
                         )}
                     </div>
 

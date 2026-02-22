@@ -31,6 +31,7 @@ function dtoToEntity(dto: HermanoDTO): Hermano {
         dto.consentimientos,
         dto.auditoria,
         dto.apodo ?? null,
+        dto.direccion ?? null,
         dto.rol ?? 'HERMANO',
         dto.userId ?? null
     );
@@ -45,6 +46,7 @@ function entityToDto(entity: Hermano): HermanoDTO {
         numeroHermano: entity.numeroHermano,
         nombre: entity.nombre,
         apodo: entity.apodo,
+        direccion: entity.direccion,
         apellido1: entity.apellido1,
         apellido2: entity.apellido2,
         dni: entity.dni?.getValue() ?? null,

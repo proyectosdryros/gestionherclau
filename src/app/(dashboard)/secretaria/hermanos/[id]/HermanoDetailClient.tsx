@@ -252,6 +252,10 @@ export function HermanoDetailClient({ id }: HermanoDetailClientProps) {
                                 <h4 className="text-sm font-medium text-gray-500">Email</h4>
                                 <p className="mt-1">{hermano.email?.toString() || '-'}</p>
                             </div>
+                            <div className="md:col-span-2">
+                                <h4 className="text-sm font-medium text-gray-500">Dirección</h4>
+                                <p className="mt-1">{hermano.direccion || 'No especificada'}</p>
+                            </div>
                             <div>
                                 <h4 className="text-sm font-medium text-gray-500">Teléfono</h4>
                                 <p className="mt-1">{hermano.telefono || '-'}</p>

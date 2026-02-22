@@ -12,6 +12,7 @@ import { v7 as uuidv7 } from 'uuid';
 export interface RegistrarHermanoInput {
     nombre: string;
     apodo?: string | null;
+    direccion?: string | null;
     apellido1: string;
     apellido2?: string | null;
     dni?: string | null;
@@ -68,7 +69,8 @@ export class RegistrarHermanoUseCase {
                 updated_at: new Date(),
                 version: 1,
             },
-            input.apodo?.trim() ?? null
+            input.apodo?.trim() ?? null,
+            input.direccion?.trim() ?? null
         );
 
         // 5. Persistir

@@ -10,15 +10,18 @@ import { HermanosList } from '@/presentation/components/hermanos/HermanosList';
 import { Modal } from '@/presentation/components/ui/Modal';
 import { HermanoForm } from '@/presentation/components/hermanos/HermanoForm';
 import { ReorganizarHermanosUseCase } from '@/core/use-cases/secretaria/ReorganizarHermanosUseCase';
+import { AsignarDireccionesAleatoriasUseCase } from '@/core/use-cases/secretaria/AsignarDireccionesAleatoriasUseCase';
 import { InsForgeHermanoRepository } from '@/infrastructure/repositories/insforge/InsForgeHermanoRepository';
 
 const repo = new InsForgeHermanoRepository();
 const reorganizarUseCase = new ReorganizarHermanosUseCase(repo);
+const asignarDireccionesUseCase = new AsignarDireccionesAleatoriasUseCase(repo);
 
 export default function HermanosPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
     const [isReorganizing, setIsReorganizing] = useState(false);
+    const [isAssigningAddr, setIsAssigningAddr] = useState(false);
 
     const handleSuccess = () => {
         setIsModalOpen(false);
@@ -41,6 +44,22 @@ export default function HermanosPage() {
         }
     };
 
+    const handleAsignarDirecciones = async () => {
+        if (!confirm('¿Deseas asignar direcciones aleatorias de Ayamonte a todos los hermanos activos que no tengan una?')) return;
+
+        try {
+            setIsAssigningAddr(true);
+            await asignarDireccionesUseCase.execute();
+            setRefreshKey(prev => prev + 1);
+            alert('Direcciones asignadas correctamente.');
+        } catch (error: any) {
+            console.error('Error asignando direcciones:', error);
+            alert('Error: ' + error.message);
+        } finally {
+            setIsAssigningAddr(false);
+        }
+    };
+
     return (
         <div className="container mx-auto py-8">
             <div className="flex justify-between items-center mb-6">
@@ -51,6 +70,13 @@ export default function HermanosPage() {
                     </p>
                 </div>
                 <div className="flex gap-2">
+                    <button
+                        onClick={handleAsignarDirecciones}
+                        disabled={isAssigningAddr}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 text-xs font-bold"
+                    >
+                        {isAssigningAddr ? 'Asignando...' : 'Poblar Direcciones Ayamonte'}
+                    </button>
                     <button
                         onClick={handleReorganizar}
                         disabled={isReorganizing}

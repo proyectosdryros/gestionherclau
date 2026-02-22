@@ -201,6 +201,7 @@ export class InsForgeHermanoRepository implements HermanoRepository {
                 version: data.auditoria.version
             },
             data.apodo,
+            data.direccion,
             data.user_id
         );
     }
@@ -211,6 +212,7 @@ export class InsForgeHermanoRepository implements HermanoRepository {
             numeroHermano: hermano.numeroHermano,
             nombre: hermano.nombre,
             apodo: hermano.apodo,
+            direccion: hermano.direccion,
             user_id: hermano.userId,
             apellido1: hermano.apellido1,
             apellido2: hermano.apellido2,
