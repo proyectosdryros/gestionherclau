@@ -47,6 +47,7 @@ export function HermanoForm({ hermano, onSuccess, onCancel }: HermanoFormProps) 
                 telefono: hermano.telefono ?? undefined,
                 fechaNacimiento: hermano.fechaNacimiento ?? null,
                 fechaAlta: hermano.fechaAlta,
+                estado: hermano.estado,
                 consentimientos: {
                     datos: hermano.consentimientos.datos,
                     imagenes: hermano.consentimientos.imagenes,
@@ -256,6 +257,28 @@ export function HermanoForm({ hermano, onSuccess, onCancel }: HermanoFormProps) 
                             <p className="text-[10px] text-red-500 mt-0.5">{errors.fechaAlta.message}</p>
                         )}
                     </div>
+
+                    {/* Estado - Solo visible en edición */}
+                    {isEditing && (
+                        <div>
+                            <label htmlFor="estado" className="block text-xs font-medium mb-1 text-muted-foreground">
+                                Estado del Hermano <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                {...register('estado')}
+                                id="estado"
+                                className="w-full px-2 py-1.5 border rounded-md bg-background text-sm font-bold"
+                            >
+                                <option value="ACTIVO">ACTIVO</option>
+                                <option value="BAJA_TEMPORAL">BAJA TEMPORAL</option>
+                                <option value="BAJA_VOLUNTARIA">BAJA VOLUNTARIA</option>
+                                <option value="FALLECIDO">FALLECIDO</option>
+                            </select>
+                            {errors.estado && (
+                                <p className="text-[10px] text-red-500 mt-0.5">{errors.estado.message}</p>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 

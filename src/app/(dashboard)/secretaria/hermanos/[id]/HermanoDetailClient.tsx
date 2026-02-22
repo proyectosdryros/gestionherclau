@@ -24,6 +24,7 @@ import { RegistrarFamiliarUseCase } from '@/core/use-cases/secretaria/RegistrarF
 import { EliminarFamiliarUseCase } from '@/core/use-cases/secretaria/EliminarFamiliarUseCase';
 import { RegistrarMeritoUseCase } from '@/core/use-cases/secretaria/RegistrarMeritoUseCase';
 import { EliminarMeritoUseCase } from '@/core/use-cases/secretaria/EliminarMeritoUseCase';
+import { EliminarHermanoUseCase } from '@/core/use-cases/secretaria/EliminarHermanoUseCase';
 import { FamiliaresList } from '@/presentation/components/familiares/FamiliaresList';
 import { MeritosList } from '@/presentation/components/meritos/MeritosList';
 import { FamiliarCreateDTO, MeritoCreateDTO } from '@/lib/validations/hermano.schemas';
@@ -43,6 +44,7 @@ const registrarFamiliarUseCase = new RegistrarFamiliarUseCase(familiarRepository
 const eliminarFamiliarUseCase = new EliminarFamiliarUseCase(familiarRepository);
 const registrarMeritoUseCase = new RegistrarMeritoUseCase(meritoRepository);
 const eliminarMeritoUseCase = new EliminarMeritoUseCase(meritoRepository);
+const eliminarHermanoUseCase = new EliminarHermanoUseCase(hermanoRepository);
 
 interface HermanoDetailClientProps {
     id: string;
@@ -56,6 +58,7 @@ export function HermanoDetailClient({ id }: HermanoDetailClientProps) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const { recibos, loading: loadingRecibos } = useRecibos();
 
@@ -134,6 +137,26 @@ export function HermanoDetailClient({ id }: HermanoDetailClientProps) {
         }
     };
 
+    const handleDeleteHermano = async () => {
+        if (!hermano) return;
+
+        const confirm = window.confirm(`¿Estás seguro de que deseas dar de baja al hermano ${hermano.getNombreCompleto()}? Esta acción cambiará su estado a BAJA_VOLUNTARIA.`);
+
+        if (!confirm) return;
+
+        try {
+            setIsDeleting(true);
+            await eliminarHermanoUseCase.execute(hermano.id);
+            await loadHermano();
+            alert('Hermano dado de baja correctamente.');
+        } catch (error) {
+            console.error('Error deleting hermano:', error);
+            alert('Error al dar de baja al hermano.');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center p-8">
@@ -187,6 +210,14 @@ export function HermanoDetailClient({ id }: HermanoDetailClientProps) {
                         }`}>
                         {hermano.estado}
                     </span>
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleDeleteHermano}
+                        disabled={isDeleting || hermano.estado !== 'ACTIVO'}
+                    >
+                        Dar de Baja
+                    </Button>
                     <button
                         onClick={() => setIsEditModalOpen(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"

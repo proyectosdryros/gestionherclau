@@ -118,6 +118,7 @@ export const HermanoCreateSchema = HermanoSchema.omit({
     cuotasAlDia: true,
 }).extend({
     numeroHermano: z.number().int().positive().optional(), // Auto-generado si no se proporciona
+    estado: EstadoHermanoSchema.optional(),
 });
 
 /**
