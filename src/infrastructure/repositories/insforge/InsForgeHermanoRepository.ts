@@ -141,6 +141,7 @@ export class InsForgeHermanoRepository implements HermanoRepository {
         const { data, error } = await insforge.database
             .from('hermanos')
             .select('numeroHermano')
+            .lt('numeroHermano', 800000) // Ignorar rangos muertos
             .order('numeroHermano', { ascending: false })
             .limit(1)
             .single();
