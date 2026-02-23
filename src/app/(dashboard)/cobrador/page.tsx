@@ -15,20 +15,19 @@ import {
     Phone,
     User,
     Euro,
-    Calendar,
     Loader2,
     RotateCcw,
     Map as MapIcon,
     List,
     X,
-    Home
+    Home,
+    SquareCheck
 } from 'lucide-react';
 import { Hermano } from '@/core/domain/entities/Hermano';
 
-const MONTHS_FULL = [
-    'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
-];
+const MONTHS_FULL = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const MONTHS_FULL_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 // --- Sub-componentes ---
 
@@ -59,7 +58,6 @@ function MapaHermano({ direccion, nombre }: { direccion: string; nombre: string 
                 <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
                 <p className="text-sm text-slate-300 font-medium truncate">{direccion}</p>
             </div>
-            {/* Mapa embebido OSM */}
             <div className="relative h-48 bg-slate-800">
                 <iframe
                     src={`https://maps.google.com/maps?q=${query}&output=embed&z=16`}
@@ -68,7 +66,6 @@ function MapaHermano({ direccion, nombre }: { direccion: string; nombre: string 
                     title={`Mapa ${nombre}`}
                 />
             </div>
-            {/* Botones de navegación */}
             <div className="flex gap-2 p-3">
                 <a
                     href={mapsUrl}
@@ -93,6 +90,56 @@ function MapaHermano({ direccion, nombre }: { direccion: string; nombre: string 
     );
 }
 
+// Grid de meses con selección individual
+interface MonthGridProps {
+    paidMonths: number[];
+    selectedMonths: number[];
+    onToggleMonth: (month: number) => void;
+    isProcessing: boolean;
+}
+
+function MonthGrid({ paidMonths, selectedMonths, onToggleMonth, isProcessing }: MonthGridProps) {
+    return (
+        <div className="grid grid-cols-6 gap-1.5">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(m => {
+                const paid = paidMonths.includes(m);
+                const selected = selectedMonths.includes(m);
+                return (
+                    <button
+                        key={m}
+                        onClick={() => !paid && !isProcessing && onToggleMonth(m)}
+                        disabled={paid || isProcessing}
+                        className={cn(
+                            'flex flex-col items-center justify-center py-2.5 rounded-xl text-center transition-all duration-150 select-none',
+                            paid
+                                // Mes pagado: verde, no clicable
+                                ? 'bg-emerald-900/60 border border-emerald-700/50 cursor-default'
+                                : selected
+                                    // Mes seleccionado para pagar: azul/primary
+                                    ? 'bg-primary border border-primary/70 shadow-md shadow-primary/30 scale-105 cursor-pointer active:scale-100'
+                                    // Mes pendiente sin seleccionar: gris clicable
+                                    : 'bg-slate-700/50 border border-slate-600/40 cursor-pointer hover:bg-slate-600/60 hover:border-slate-500/60 active:scale-95'
+                        )}
+                    >
+                        <span className={cn(
+                            'text-[9px] font-black uppercase leading-none mb-1',
+                            paid ? 'text-emerald-400' : selected ? 'text-white' : 'text-slate-400'
+                        )}>
+                            {MONTHS_FULL[m - 1]}
+                        </span>
+                        {paid
+                            ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                            : selected
+                                ? <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                                : <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-500/50" />
+                        }
+                    </button>
+                );
+            })}
+        </div>
+    );
+}
+
 interface HermanoCardProps {
     hermano: Hermano;
     paidMonths: number[];
@@ -101,6 +148,7 @@ interface HermanoCardProps {
     isExpanded: boolean;
     isProcessing: boolean;
     onToggle: () => void;
+    onPaySelected: (hermanoId: string, months: number[]) => void;
     onPayAll: (hermanoId: string) => void;
 }
 
@@ -112,13 +160,35 @@ function HermanoCard({
     isExpanded,
     isProcessing,
     onToggle,
+    onPaySelected,
     onPayAll
 }: HermanoCardProps) {
+    const [selectedMonths, setSelectedMonths] = useState<number[]>([]);
+
     const paidCount = paidMonths.length;
     const pendingCount = 12 - paidCount;
     const pendingAmount = pendingCount * cuotaEstandard;
-    const pendingMonths = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter(m => !paidMonths.includes(m));
     const isFullyPaid = paidCount === 12;
+
+    const allPendingMonths = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter(m => !paidMonths.includes(m));
+    const selectedTotal = selectedMonths.length * cuotaEstandard;
+    const allSelected = selectedMonths.length === allPendingMonths.length && allPendingMonths.length > 0;
+
+    const toggleMonth = useCallback((month: number) => {
+        setSelectedMonths(prev =>
+            prev.includes(month) ? prev.filter(m => m !== month) : [...prev, month].sort((a, b) => a - b)
+        );
+    }, []);
+
+    const toggleAll = useCallback(() => {
+        setSelectedMonths(allSelected ? [] : [...allPendingMonths]);
+    }, [allSelected, allPendingMonths]);
+
+    // Reset selección cuando se colapsa
+    const handleToggle = () => {
+        if (isExpanded) setSelectedMonths([]);
+        onToggle();
+    };
 
     return (
         <div className={cn(
@@ -128,14 +198,13 @@ function HermanoCard({
                 : 'border-slate-700/50 bg-slate-800/30',
             isFullyPaid && 'opacity-60'
         )}>
-            {/* Cabecera del card */}
+            {/* Cabecera */}
             <button
-                onClick={onToggle}
+                onClick={handleToggle}
                 className="w-full flex items-center gap-3 p-4 text-left"
             >
-                {/* Avatar con número */}
                 <div className={cn(
-                    'w-12 h-12 rounded-xl flex flex-col items-center justify-center flex-shrink-0 font-black transition-colors',
+                    'w-12 h-12 rounded-xl flex flex-col items-center justify-center flex-shrink-0 font-black',
                     isFullyPaid
                         ? 'bg-emerald-900/50 text-emerald-400'
                         : pendingCount === 12
@@ -146,7 +215,6 @@ function HermanoCard({
                     <span className="text-sm leading-none">{hermano.numeroHermano}</span>
                 </div>
 
-                {/* Datos del hermano */}
                 <div className="flex-1 min-w-0">
                     <p className="font-black text-white text-sm truncate leading-tight">
                         {hermano.getNombreCompleto()}
@@ -170,34 +238,137 @@ function HermanoCard({
             {/* Panel expandido */}
             {isExpanded && (
                 <div className="px-4 pb-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
-                    {/* Meses pagados / pendientes */}
-                    <div className="grid grid-cols-6 gap-1.5">
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(m => {
-                            const paid = paidMonths.includes(m);
-                            return (
-                                <div
-                                    key={m}
+
+                    {/* Grid de meses */}
+                    {!isFullyPaid && (
+                        <>
+                            {/* Cabecera del grid con botón seleccionar todo */}
+                            <div className="flex items-center justify-between">
+                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
+                                    Toca los meses para seleccionar:
+                                </p>
+                                <button
+                                    onClick={toggleAll}
+                                    disabled={isProcessing}
                                     className={cn(
-                                        'flex flex-col items-center justify-center py-2 rounded-lg text-center transition-colors',
-                                        paid
-                                            ? 'bg-emerald-900/60 border border-emerald-700/50'
-                                            : 'bg-slate-700/40 border border-slate-600/30'
+                                        'flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-lg border transition-all',
+                                        allSelected
+                                            ? 'bg-primary/20 border-primary/40 text-primary'
+                                            : 'bg-slate-700/50 border-slate-600/50 text-slate-400 hover:text-white'
                                     )}
                                 >
-                                    <span className={cn(
-                                        'text-[10px] font-black uppercase',
-                                        paid ? 'text-emerald-400' : 'text-slate-500'
-                                    )}>
-                                        {MONTHS_FULL[m - 1]}
-                                    </span>
-                                    {paid
-                                        ? <CheckCircle2 className="w-3 h-3 text-emerald-500 mt-0.5" />
-                                        : <XCircle className="w-3 h-3 text-slate-600 mt-0.5" />
-                                    }
+                                    <SquareCheck className="w-3 h-3" />
+                                    {allSelected ? 'DESMARCAR TODO' : 'SELECCIONAR TODO'}
+                                </button>
+                            </div>
+
+                            <MonthGrid
+                                paidMonths={paidMonths}
+                                selectedMonths={selectedMonths}
+                                onToggleMonth={toggleMonth}
+                                isProcessing={isProcessing}
+                            />
+
+                            {/* Panel de cobro */}
+                            {selectedMonths.length > 0 ? (
+                                /* Si hay meses seleccionados → botón cobrar selección */
+                                <div className="space-y-2 animate-in fade-in zoom-in-95 duration-200">
+                                    {/* Resumen de meses seleccionados */}
+                                    <div className="flex flex-wrap gap-1">
+                                        {selectedMonths.map(m => (
+                                            <button
+                                                key={m}
+                                                onClick={() => toggleMonth(m)}
+                                                className="flex items-center gap-1 px-2 py-0.5 bg-primary/20 border border-primary/40 text-primary text-[10px] font-black rounded-lg hover:bg-red-900/40 hover:border-red-700/40 hover:text-red-300 transition-colors"
+                                            >
+                                                {MONTHS_FULL_ES[m - 1]}
+                                                <X className="w-2.5 h-2.5" />
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* Total y botón cobrar seleccionados */}
+                                    <div className="flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded-xl">
+                                        <div>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                                                {selectedMonths.length} {selectedMonths.length === 1 ? 'mes' : 'meses'} seleccionado{selectedMonths.length !== 1 ? 's' : ''}
+                                            </p>
+                                            <p className="text-xl font-black text-white">{formatCurrency(selectedTotal)}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => onPaySelected(hermano.id, selectedMonths)}
+                                            disabled={isProcessing}
+                                            className={cn(
+                                                'flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm transition-all active:scale-95',
+                                                isProcessing
+                                                    ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                                                    : 'bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/30'
+                                            )}
+                                        >
+                                            {isProcessing ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <>
+                                                    <Euro className="w-4 h-4" />
+                                                    COBRAR
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+
+                                    {/* Si no es todo → mostrar también botón cobrar todo */}
+                                    {!allSelected && (
+                                        <button
+                                            onClick={() => onPayAll(hermano.id)}
+                                            disabled={isProcessing}
+                                            className="w-full py-2 text-xs font-black text-slate-500 hover:text-slate-300 border border-slate-700/50 hover:border-slate-600 rounded-xl transition-colors"
+                                        >
+                                            O cobrar los {pendingCount} meses pendientes ({formatCurrency(pendingAmount)})
+                                        </button>
+                                    )}
                                 </div>
-                            );
-                        })}
-                    </div>
+                            ) : (
+                                /* Sin selección → mostrar botón cobrar todo como secundario */
+                                <div className="flex items-center justify-between p-3 bg-slate-700/20 border border-slate-700/30 rounded-xl">
+                                    <div>
+                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total pendiente</p>
+                                        <p className="text-lg font-black text-slate-400">{formatCurrency(pendingAmount)}</p>
+                                    </div>
+                                    <button
+                                        onClick={() => onPayAll(hermano.id)}
+                                        disabled={isProcessing}
+                                        className={cn(
+                                            'flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm transition-all active:scale-95 border',
+                                            isProcessing
+                                                ? 'bg-slate-600 text-slate-400 cursor-not-allowed border-transparent'
+                                                : 'bg-slate-700/50 hover:bg-slate-700 text-slate-300 hover:text-white border-slate-600/50'
+                                        )}
+                                    >
+                                        {isProcessing ? (
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            'COBRAR TODO'
+                                        )}
+                                    </button>
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {isFullyPaid && (
+                        <>
+                            <MonthGrid
+                                paidMonths={paidMonths}
+                                selectedMonths={[]}
+                                onToggleMonth={() => { }}
+                                isProcessing={false}
+                            />
+                            <div className="flex items-center gap-2 p-3 bg-emerald-900/30 border border-emerald-700/30 rounded-xl">
+                                <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                                <p className="text-sm text-emerald-300 font-bold">¡Cuotas al día! Todo pagado en {currentYear}.</p>
+                            </div>
+                        </>
+                    )}
 
                     {/* Info de contacto y dirección */}
                     <div className="space-y-2">
@@ -226,62 +397,6 @@ function HermanoCard({
                             </div>
                         )}
                     </div>
-
-                    {/* Meses pendientes y botón de cobro */}
-                    {!isFullyPaid && (
-                        <div className="space-y-3">
-                            {/* Meses pendientes en chips */}
-                            <div>
-                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2">
-                                    Meses pendientes:
-                                </p>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {pendingMonths.map(m => (
-                                        <span
-                                            key={m}
-                                            className="px-2 py-1 bg-red-900/40 border border-red-700/40 text-red-300 text-xs font-black rounded-lg"
-                                        >
-                                            {MONTHS_FULL[m - 1]} {currentYear}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Total y botón cobrar */}
-                            <div className="flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded-xl">
-                                <div>
-                                    <p className="text-xs text-slate-400 font-bold uppercase">Total pendiente</p>
-                                    <p className="text-xl font-black text-white">{formatCurrency(pendingAmount)}</p>
-                                </div>
-                                <button
-                                    onClick={() => onPayAll(hermano.id)}
-                                    disabled={isProcessing}
-                                    className={cn(
-                                        'flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm transition-all active:scale-95',
-                                        isProcessing
-                                            ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
-                                            : 'bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/30'
-                                    )}
-                                >
-                                    {isProcessing ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                        <>
-                                            <Euro className="w-4 h-4" />
-                                            COBRAR TODO
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {isFullyPaid && (
-                        <div className="flex items-center gap-2 p-3 bg-emerald-900/30 border border-emerald-700/30 rounded-xl">
-                            <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                            <p className="text-sm text-emerald-300 font-bold">¡Cuotas al día! Todo pagado en {currentYear}.</p>
-                        </div>
-                    )}
                 </div>
             )}
         </div>
@@ -312,7 +427,6 @@ export default function CobradorPage() {
         return config ? config.importe : 1.50;
     }, [precios]);
 
-    // Meses pagados por hermano en el año actual
     const pagosPorHermano = useMemo(() => {
         const mapping: Record<string, number[]> = {};
         recibos.forEach(r => {
@@ -330,7 +444,6 @@ export default function CobradorPage() {
         return mapping;
     }, [recibos, currentYear]);
 
-    // Estadísticas globales
     const stats = useMemo(() => {
         const total = hermanos.length;
         const alDia = hermanos.filter(h => (pagosPorHermano[h.id]?.length || 0) === 12).length;
@@ -342,7 +455,6 @@ export default function CobradorPage() {
         return { total, alDia, pendiente, totalPendiente };
     }, [hermanos, pagosPorHermano, cuotaEstandard]);
 
-    // Hermanos filtrados
     const filteredHermanos = useMemo(() => {
         return hermanos
             .filter(h => {
@@ -363,26 +475,21 @@ export default function CobradorPage() {
             .sort((a, b) => {
                 const pendA = 12 - (pagosPorHermano[a.id]?.length || 0);
                 const pendB = 12 - (pagosPorHermano[b.id]?.length || 0);
-                return pendB - pendA; // más pendientes primero
+                return pendB - pendA;
             });
     }, [hermanos, pagosPorHermano, filter, searchTerm]);
 
-    // Cobrar todos los meses pendientes de un hermano
-    const handlePayAll = useCallback(async (hermanoId: string) => {
-        const paidMonths = pagosPorHermano[hermanoId] || [];
-        const pendingMonths = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter(m => !paidMonths.includes(m));
-        if (pendingMonths.length === 0) return;
-
+    // Función genérica para cobrar una lista de meses
+    const processPayment = useCallback(async (hermanoId: string, monthsToPay: number[]) => {
+        if (monthsToPay.length === 0) return;
         setProcessingId(hermanoId);
         try {
-            for (const monthNumber of pendingMonths) {
+            for (const monthNumber of monthsToPay) {
                 const jsMonth = monthNumber - 1;
-                const monthName = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][jsMonth];
                 const dateObj = new Date(Date.UTC(currentYear, jsMonth, 1, 12, 0, 0));
                 await crearRecibo({
                     hermanoId,
-                    concepto: `Cuota ${monthName} ${currentYear}`,
+                    concepto: `Cuota ${MONTHS_FULL_ES[jsMonth]} ${currentYear}`,
                     importe: cuotaEstandard,
                     estado: 'COBRADO',
                     tipo: 'CUOTA_ORDINARIA',
@@ -399,7 +506,17 @@ export default function CobradorPage() {
         } finally {
             setProcessingId(null);
         }
-    }, [pagosPorHermano, currentYear, cuotaEstandard, crearRecibo]);
+    }, [currentYear, cuotaEstandard, crearRecibo]);
+
+    const handlePaySelected = useCallback((hermanoId: string, months: number[]) => {
+        processPayment(hermanoId, months);
+    }, [processPayment]);
+
+    const handlePayAll = useCallback((hermanoId: string) => {
+        const paidMonths = pagosPorHermano[hermanoId] || [];
+        const pending = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter(m => !paidMonths.includes(m));
+        processPayment(hermanoId, pending);
+    }, [pagosPorHermano, processPayment]);
 
     const isLoading = loadingHermanos || loadingRecibos;
 
@@ -408,7 +525,6 @@ export default function CobradorPage() {
             {/* Header fijo */}
             <div className="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800">
                 <div className="px-4 pt-4 pb-3">
-                    {/* Título */}
                     <div className="flex items-center justify-between mb-4">
                         <div>
                             <h1 className="text-2xl font-black text-white tracking-tight">Cobrador</h1>
@@ -416,15 +532,12 @@ export default function CobradorPage() {
                                 Campaña {currentYear} · {stats.pendiente} pendientes
                             </p>
                         </div>
-                        {/* Toggle Vista */}
                         <div className="flex items-center bg-slate-800 rounded-xl p-1 gap-1">
                             <button
                                 onClick={() => setView('lista')}
                                 className={cn(
                                     'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all',
-                                    view === 'lista'
-                                        ? 'bg-primary text-white shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-300'
+                                    view === 'lista' ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'
                                 )}
                             >
                                 <List className="w-3.5 h-3.5" />
@@ -434,9 +547,7 @@ export default function CobradorPage() {
                                 onClick={() => setView('mapa')}
                                 className={cn(
                                     'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all',
-                                    view === 'mapa'
-                                        ? 'bg-primary text-white shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-300'
+                                    view === 'mapa' ? 'bg-primary text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'
                                 )}
                             >
                                 <MapIcon className="w-3.5 h-3.5" />
@@ -540,7 +651,6 @@ export default function CobradorPage() {
                         </p>
                         {filteredHermanos.map(hermano => (
                             <div key={hermano.id} className="relative">
-                                {/* Toast de éxito */}
                                 {successId === hermano.id && (
                                     <div className="absolute -top-2 left-0 right-0 flex justify-center z-10 animate-in fade-in slide-in-from-top-2 duration-300">
                                         <div className="flex items-center gap-2 bg-emerald-600 text-white text-xs font-black px-4 py-2 rounded-full shadow-lg shadow-emerald-900/50">
@@ -557,6 +667,7 @@ export default function CobradorPage() {
                                     isExpanded={expandedId === hermano.id}
                                     isProcessing={processingId === hermano.id}
                                     onToggle={() => setExpandedId(expandedId === hermano.id ? null : hermano.id)}
+                                    onPaySelected={handlePaySelected}
                                     onPayAll={handlePayAll}
                                 />
                             </div>
@@ -584,13 +695,10 @@ export default function CobradorPage() {
                                     const pendingCount = 12 - paidMonths.length;
                                     return (
                                         <div key={hermano.id} className="rounded-2xl border border-slate-700/50 bg-slate-800/30 overflow-hidden">
-                                            {/* Header del card mapa */}
                                             <div className="flex items-center gap-3 p-3">
                                                 <div className={cn(
                                                     'w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0',
-                                                    pendingCount === 0
-                                                        ? 'bg-emerald-900/60 text-emerald-400'
-                                                        : 'bg-red-900/60 text-red-400'
+                                                    pendingCount === 0 ? 'bg-emerald-900/60 text-emerald-400' : 'bg-red-900/60 text-red-400'
                                                 )}>
                                                     {hermano.numeroHermano}
                                                 </div>
