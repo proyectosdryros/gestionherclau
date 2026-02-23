@@ -1,79 +1,47 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useHermanos } from '@/presentation/hooks/useHermanos';
 import { useRecibos } from '@/presentation/hooks/useRecibos';
 import { usePrecios } from '@/presentation/hooks/usePrecios';
 import { useConfiguracion } from '@/presentation/hooks/useConfiguracion';
 import { cn, formatCurrency } from '@/lib/utils';
 import {
-    MapPin,
-    Search,
-    CheckCircle2,
-    XCircle,
-    ChevronRight,
-    Navigation,
-    Phone,
-    User,
-    Euro,
-    Loader2,
-    RotateCcw,
-    Map as MapIcon,
-    List,
-    X,
-    Home,
-    SquareCheck
+    MapPin, Search, CheckCircle2, XCircle, ChevronRight,
+    Navigation, Phone, Euro, Loader2, RotateCcw,
+    Map as MapIcon, List, X, Home, SquareCheck, User, RefreshCw
 } from 'lucide-react';
 import { Hermano } from '@/core/domain/entities/Hermano';
 
-const MONTHS_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-const MONTHS_LONG = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const MONTHS_S = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const MONTHS_L = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const ALL_MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
-// --- Sub-componentes ---
-
-function StatusBadge({ paidCount }: { paidCount: number }) {
-    const all = paidCount === 12;
-    const partial = paidCount > 0 && !all;
+function StatusBadge({ n }: { n: number }) {
     return (
-        <span className={cn(
-            'inline-flex items-center gap-1 text-xs font-black px-2 py-0.5 rounded-full',
-            all ? 'bg-emerald-100 text-emerald-700' :
-                partial ? 'bg-amber-100 text-amber-700' :
-                    'bg-red-100 text-red-600'
-        )}>
-            {all ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-            {paidCount}/12
+        <span className={cn('inline-flex items-center gap-1 text-xs font-black px-2 py-0.5 rounded-full',
+            n === 12 ? 'bg-emerald-100 text-emerald-700' : n > 0 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600')}>
+            {n === 12 ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+            {n}/12
         </span>
     );
 }
 
-function MapaHermano({ direccion, nombre }: { direccion: string; nombre: string }) {
-    const query = encodeURIComponent(`${direccion}, Ayamonte, España`);
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${query}`;
-    const wazeUrl = `https://www.waze.com/ul?q=${query}&navigate=yes`;
+function MapaCard({ dir, name }: { dir: string; name: string }) {
+    const q = encodeURIComponent(`${dir}, Ayamonte, España`);
     return (
         <div className="bg-slate-900 rounded-2xl overflow-hidden">
-            <div className="flex items-center gap-2 px-4 py-3 bg-slate-800">
-                <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
-                <p className="text-sm text-slate-300 font-medium truncate">{direccion}</p>
+            <div className="h-40 bg-slate-800">
+                <iframe src={`https://maps.google.com/maps?q=${q}&output=embed&z=16`}
+                    className="w-full h-full border-0" loading="lazy" title={`Mapa ${name}`} />
             </div>
-            <div className="relative h-48 bg-slate-800">
-                <iframe
-                    src={`https://maps.google.com/maps?q=${query}&output=embed&z=16`}
-                    className="w-full h-full border-0"
-                    loading="lazy"
-                    title={`Mapa ${nombre}`}
-                />
-            </div>
-            <div className="flex gap-2 p-3">
-                <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
-                    className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black py-2 rounded-xl transition-colors">
-                    <Navigation className="w-3 h-3" />Google Maps
+            <div className="flex gap-2 p-2">
+                <a href={`https://www.google.com/maps/search/?api=1&query=${q}`} target="_blank" rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-1 bg-blue-600 text-white text-[10px] font-black py-2 rounded-xl">
+                    <Navigation className="w-3 h-3" />Maps
                 </a>
-                <a href={wazeUrl} target="_blank" rel="noopener noreferrer"
-                    className="flex-1 flex items-center justify-center gap-2 bg-[#33CCFF] hover:bg-[#00BBEE] text-slate-900 text-xs font-black py-2 rounded-xl transition-colors">
+                <a href={`https://www.waze.com/ul?q=${q}&navigate=yes`} target="_blank" rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-1 bg-[#33CCFF] text-slate-900 text-[10px] font-black py-2 rounded-xl">
                     <Navigation className="w-3 h-3" />Waze
                 </a>
             </div>
@@ -81,45 +49,32 @@ function MapaHermano({ direccion, nombre }: { direccion: string; nombre: string 
     );
 }
 
-// --- Grid de 12 meses clicable ---
-interface MonthGridProps {
-    paidMonths: number[];
-    selectedMonths: number[];
-    onToggle: (month: number) => void;
-    isProcessing: boolean;
-}
-function MonthGrid({ paidMonths, selectedMonths, onToggle, isProcessing }: MonthGridProps) {
+// Grid de 12 meses con selección
+function MonthGrid({ paid, selected, onToggle, busy }: {
+    paid: number[]; selected: number[]; onToggle: (m: number) => void; busy: boolean;
+}) {
     return (
-        <div className="grid grid-cols-6 gap-1.5">
+        <div className="grid grid-cols-6 gap-1">
             {ALL_MONTHS.map(m => {
-                const paid = paidMonths.includes(m);
-                const selected = selectedMonths.includes(m);
+                const isPaid = paid.includes(m);
+                const isSel = selected.includes(m);
                 return (
-                    <button
-                        key={m}
-                        type="button"
-                        onClick={() => !paid && !isProcessing && onToggle(m)}
-                        disabled={paid || isProcessing}
-                        className={cn(
-                            'flex flex-col items-center justify-center py-2.5 rounded-xl text-center transition-all duration-150 select-none',
-                            paid
-                                ? 'bg-emerald-900/60 border border-emerald-700/50 cursor-default'
-                                : selected
-                                    ? 'bg-primary border border-primary/70 shadow-md shadow-primary/30 scale-[1.06] cursor-pointer'
-                                    : 'bg-slate-700/50 border border-slate-600/40 cursor-pointer hover:bg-slate-600/60 active:scale-95'
-                        )}
-                    >
-                        <span className={cn(
-                            'text-[9px] font-black uppercase leading-none mb-1',
-                            paid ? 'text-emerald-400' : selected ? 'text-white' : 'text-slate-400'
+                    <button key={m} type="button" disabled={isPaid || busy}
+                        onClick={() => !isPaid && !busy && onToggle(m)}
+                        className={cn('flex flex-col items-center justify-center py-2 rounded-xl transition-all',
+                            isPaid ? 'bg-emerald-900/70 border border-emerald-700/60 cursor-default'
+                                : isSel ? 'bg-primary border border-primary/70 scale-[1.05] shadow shadow-primary/30'
+                                    : 'bg-slate-700/50 border border-slate-600/40 hover:bg-slate-600/60 active:scale-95'
                         )}>
-                            {MONTHS_SHORT[m - 1]}
+                        <span className={cn('text-[9px] font-black mb-0.5',
+                            isPaid ? 'text-emerald-400' : isSel ? 'text-white' : 'text-slate-400')}>
+                            {MONTHS_S[m - 1]}
                         </span>
-                        {paid
-                            ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                            : selected
-                                ? <CheckCircle2 className="w-3.5 h-3.5 text-white" />
-                                : <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-500/50" />
+                        {isPaid
+                            ? <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                            : isSel
+                                ? <CheckCircle2 className="w-3 h-3 text-white" />
+                                : <div className="w-3 h-3 rounded-full border-2 border-slate-500/50" />
                         }
                     </button>
                 );
@@ -128,246 +83,140 @@ function MonthGrid({ paidMonths, selectedMonths, onToggle, isProcessing }: Month
     );
 }
 
-// --- Card individual de hermano ---
-interface HermanoCardProps {
-    hermano: Hermano;
-    paidMonths: number[];          // siempre actualizado desde el padre
-    cuotaEstandard: number;
-    currentYear: number;
-    isExpanded: boolean;
-    isProcessing: boolean;
+interface CardProps {
+    h: Hermano; paid: number[]; rate: number; year: number;
+    expanded: boolean; busy: boolean;
     onToggle: () => void;
-    onPayMonths: (hermanoId: string, months: number[]) => Promise<void>;
+    onPay: (id: string, months: number[]) => Promise<void>;
 }
+function HCard({ h, paid, rate, year, expanded, busy, onToggle, onPay }: CardProps) {
+    const [sel, setSel] = useState<number[]>([]);
+    const pending = useMemo(() => ALL_MONTHS.filter(m => !paid.includes(m)), [paid]);
+    const full = paid.length === 12;
+    const allSel = sel.length === pending.length && pending.length > 0;
 
-function HermanoCard({
-    hermano, paidMonths, cuotaEstandard, currentYear,
-    isExpanded, isProcessing, onToggle, onPayMonths
-}: HermanoCardProps) {
-    // Estado LOCAL de selección — se resetea cuando paidMonths cambia (pago exitoso)
-    const [selectedMonths, setSelectedMonths] = useState<number[]>([]);
+    // Limpiar selección cuando paidMonths se actualiza (useEffect, NO en render)
+    useEffect(() => {
+        setSel(prev => prev.filter(m => !paid.includes(m)));
+    }, [paid]);
 
-    const pendingMonths = useMemo(
-        () => ALL_MONTHS.filter(m => !paidMonths.includes(m)),
-        [paidMonths]
-    );
+    const toggle = (m: number) => setSel(p => p.includes(m) ? p.filter(x => x !== m) : [...p, m].sort((a, b) => a - b));
+    const toggleAll = () => setSel(allSel ? [] : [...pending]);
 
-    const paidCount = paidMonths.length;
-    const isFullyPaid = paidCount === 12;
-    const allSelected = selectedMonths.length === pendingMonths.length && pendingMonths.length > 0;
-    const selTotal = selectedMonths.length * cuotaEstandard;
-    const allPendingTotal = pendingMonths.length * cuotaEstandard;
-
-    // Limpiar selección huérfana cuando se actualica paidMonths tras un pago
-    const cleanedSelected = selectedMonths.filter(m => !paidMonths.includes(m));
-    // Si la selección tiene meses que ya se pagaron, limpiamos sin causar re-renders infinitos
-    if (cleanedSelected.length !== selectedMonths.length) {
-        setSelectedMonths(cleanedSelected);
-    }
-
-    const toggleMonth = (month: number) =>
-        setSelectedMonths(prev =>
-            prev.includes(month) ? prev.filter(m => m !== month) : [...prev, month].sort((a, b) => a - b)
-        );
-
-    const toggleAll = () => setSelectedMonths(allSelected ? [] : [...pendingMonths]);
-
-    const handleToggle = () => {
-        if (isExpanded) setSelectedMonths([]);
-        onToggle();
-    };
-
-    const handlePay = async (months: number[]) => {
-        await onPayMonths(hermano.id, months);
-        // NO cerramos el card — el padre actualiza paidMonths y el grid se refresca solo
-        setSelectedMonths([]); // limpiamos selección
-    };
+    const handleClose = () => { setSel([]); onToggle(); };
+    const doPay = async (months: number[]) => { await onPay(h.id, months); setSel([]); };
 
     return (
-        <div className={cn(
-            'rounded-2xl border transition-all duration-300 overflow-hidden',
-            isExpanded
-                ? 'border-primary/30 bg-slate-800/50 shadow-lg shadow-primary/10'
+        <div className={cn('rounded-2xl border transition-all duration-200 overflow-hidden',
+            expanded ? 'border-primary/30 bg-slate-800/50 shadow-lg shadow-primary/10'
                 : 'border-slate-700/50 bg-slate-800/30',
-            isFullyPaid && !isExpanded && 'opacity-60'
-        )}>
-            {/* Cabecera clicable */}
-            <button onClick={handleToggle} className="w-full flex items-center gap-3 p-4 text-left">
-                <div className={cn(
-                    'w-12 h-12 rounded-xl flex flex-col items-center justify-center flex-shrink-0 font-black',
-                    isFullyPaid ? 'bg-emerald-900/50 text-emerald-400'
-                        : pendingMonths.length === 12 ? 'bg-red-900/50 text-red-400'
-                            : 'bg-amber-900/50 text-amber-400'
-                )}>
-                    <span className="text-xs leading-none">#</span>
-                    <span className="text-sm leading-none">{hermano.numeroHermano}</span>
+            full && !expanded && 'opacity-60')}>
+
+            <button onClick={handleClose} className="w-full flex items-center gap-3 p-4 text-left">
+                <div className={cn('w-11 h-11 rounded-xl flex flex-col items-center justify-center flex-shrink-0 font-black text-sm',
+                    full ? 'bg-emerald-900/50 text-emerald-400'
+                        : pending.length === 12 ? 'bg-red-900/50 text-red-400'
+                            : 'bg-amber-900/50 text-amber-400')}>
+                    <span className="text-[9px]">#</span>
+                    {h.numeroHermano}
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="font-black text-white text-sm truncate leading-tight">{hermano.getNombreCompleto()}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                        <StatusBadge paidCount={paidCount} />
-                        {!isFullyPaid && (
-                            <span className="text-xs text-red-400 font-bold">
-                                {formatCurrency(allPendingTotal)} pendiente
-                            </span>
-                        )}
+                    <p className="font-black text-white text-sm truncate">{h.getNombreCompleto()}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                        <StatusBadge n={paid.length} />
+                        {!full && <span className="text-xs text-red-400 font-bold">{formatCurrency(pending.length * rate)}</span>}
                     </div>
                 </div>
-                <ChevronRight className={cn(
-                    'w-4 h-4 text-slate-500 flex-shrink-0 transition-transform duration-200',
-                    isExpanded && 'rotate-90'
-                )} />
+                <ChevronRight className={cn('w-4 h-4 text-slate-500 flex-shrink-0 transition-transform', expanded && 'rotate-90')} />
             </button>
 
-            {/* Panel expandido */}
-            {isExpanded && (
-                <div className="px-4 pb-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
-
-                    {!isFullyPaid ? (
+            {expanded && (
+                <div className="px-4 pb-4 space-y-3 animate-in slide-in-from-top-2 duration-150">
+                    {!full ? (
                         <>
-                            {/* Instrucción + botón seleccionar todo */}
                             <div className="flex items-center justify-between">
-                                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
-                                    Toca los meses para seleccionar:
-                                </p>
-                                <button
-                                    type="button"
-                                    onClick={toggleAll}
-                                    disabled={isProcessing}
-                                    className={cn(
-                                        'flex items-center gap-1 text-[10px] font-black px-2.5 py-1 rounded-lg border transition-all',
-                                        allSelected
-                                            ? 'bg-primary/20 border-primary/40 text-primary'
-                                            : 'bg-slate-700/50 border-slate-600/50 text-slate-400 hover:text-white'
-                                    )}
-                                >
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wide">Selecciona meses a cobrar:</p>
+                                <button type="button" onClick={toggleAll} disabled={busy}
+                                    className={cn('flex items-center gap-1 text-[10px] font-black px-2 py-1 rounded-lg border',
+                                        allSel ? 'bg-primary/20 border-primary/40 text-primary'
+                                            : 'bg-slate-700/50 border-slate-600/50 text-slate-400')}>
                                     <SquareCheck className="w-3 h-3" />
-                                    {allSelected ? 'DESMARCAR TODO' : 'SELECCIONAR TODO'}
+                                    {allSel ? 'DESMARCAR' : 'SELEC. TODO'}
                                 </button>
                             </div>
+                            <MonthGrid paid={paid} selected={sel} onToggle={toggle} busy={busy} />
 
-                            {/* Grid de meses */}
-                            <MonthGrid
-                                paidMonths={paidMonths}
-                                selectedMonths={selectedMonths}
-                                onToggle={toggleMonth}
-                                isProcessing={isProcessing}
-                            />
-
-                            {/* Panel de cobro — cambia según selección */}
-                            {selectedMonths.length > 0 ? (
-                                <div className="space-y-2 animate-in fade-in zoom-in-95 duration-200">
-                                    {/* Chips de meses seleccionados */}
+                            {sel.length > 0 ? (
+                                <div className="space-y-2 animate-in fade-in duration-150">
                                     <div className="flex flex-wrap gap-1">
-                                        {selectedMonths.map(m => (
-                                            <button
-                                                key={m}
-                                                type="button"
-                                                onClick={() => toggleMonth(m)}
-                                                disabled={isProcessing}
-                                                className="flex items-center gap-1 px-2 py-0.5 bg-primary/20 border border-primary/40 text-primary text-[10px] font-black rounded-lg hover:bg-red-900/40 hover:border-red-700/40 hover:text-red-300 transition-colors"
-                                            >
-                                                {MONTHS_LONG[m - 1]}<X className="w-2.5 h-2.5" />
+                                        {sel.map(m => (
+                                            <button key={m} type="button" onClick={() => toggle(m)} disabled={busy}
+                                                className="flex items-center gap-1 px-2 py-0.5 bg-primary/20 border border-primary/40 text-primary text-[10px] font-black rounded-lg hover:bg-red-900/40 hover:text-red-300 transition-colors">
+                                                {MONTHS_L[m - 1]}<X className="w-2.5 h-2.5" />
                                             </button>
                                         ))}
                                     </div>
-
-                                    {/* Total + botón cobrar selección */}
                                     <div className="flex items-center justify-between p-3 bg-primary/10 border border-primary/20 rounded-xl">
                                         <div>
-                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                                                {selectedMonths.length} {selectedMonths.length === 1 ? 'mes' : 'meses'} seleccionado{selectedMonths.length !== 1 ? 's' : ''}
-                                            </p>
-                                            <p className="text-xl font-black text-white">{formatCurrency(selTotal)}</p>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase">{sel.length} {sel.length === 1 ? 'mes' : 'meses'}</p>
+                                            <p className="text-xl font-black text-white">{formatCurrency(sel.length * rate)}</p>
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => handlePay(selectedMonths)}
-                                            disabled={isProcessing}
-                                            className={cn(
-                                                'flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm transition-all active:scale-95',
-                                                isProcessing
-                                                    ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
-                                                    : 'bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/30'
-                                            )}
-                                        >
-                                            {isProcessing
-                                                ? <Loader2 className="w-4 h-4 animate-spin" />
-                                                : <><Euro className="w-4 h-4" />COBRAR</>
-                                            }
+                                        <button type="button" onClick={() => doPay(sel)} disabled={busy}
+                                            className={cn('flex items-center gap-2 px-5 py-2.5 rounded-xl font-black text-sm active:scale-95',
+                                                busy ? 'bg-slate-600 text-slate-400' : 'bg-primary text-white shadow shadow-primary/30')}>
+                                            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Euro className="w-4 h-4" />COBRAR</>}
                                         </button>
                                     </div>
-
-                                    {/* Cobrar todo como opción secundaria si no está todo seleccionado */}
-                                    {!allSelected && (
-                                        <button
-                                            type="button"
-                                            onClick={() => handlePay(pendingMonths)}
-                                            disabled={isProcessing}
-                                            className="w-full py-2 text-xs font-black text-slate-500 hover:text-slate-300 border border-slate-700/50 hover:border-slate-600 rounded-xl transition-colors"
-                                        >
-                                            O cobrar los {pendingMonths.length} meses pendientes ({formatCurrency(allPendingTotal)})
+                                    {!allSel && (
+                                        <button type="button" onClick={() => doPay(pending)} disabled={busy}
+                                            className="w-full py-2 text-xs font-black text-slate-500 hover:text-slate-300 border border-slate-700/50 rounded-xl transition-colors">
+                                            O cobrar todo ({formatCurrency(pending.length * rate)})
                                         </button>
                                     )}
                                 </div>
                             ) : (
-                                /* Sin selección → cobrar todo como opción principal */
                                 <div className="flex items-center justify-between p-3 bg-slate-700/20 border border-slate-700/30 rounded-xl">
                                     <div>
-                                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total pendiente</p>
-                                        <p className="text-lg font-black text-slate-300">{formatCurrency(allPendingTotal)}</p>
+                                        <p className="text-[10px] text-slate-500 font-bold uppercase">Total pendiente</p>
+                                        <p className="text-lg font-black text-slate-300">{formatCurrency(pending.length * rate)}</p>
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => handlePay(pendingMonths)}
-                                        disabled={isProcessing}
-                                        className={cn(
-                                            'flex items-center gap-2 px-4 py-2.5 rounded-xl font-black text-sm transition-all active:scale-95 border',
-                                            isProcessing
-                                                ? 'bg-slate-600 text-slate-400 cursor-not-allowed border-transparent'
-                                                : 'bg-slate-700 hover:bg-slate-600 text-white border-slate-600/50'
-                                        )}
-                                    >
-                                        {isProcessing
-                                            ? <Loader2 className="w-4 h-4 animate-spin" />
-                                            : 'COBRAR TODO'
-                                        }
+                                    <button type="button" onClick={() => doPay(pending)} disabled={busy}
+                                        className={cn('px-4 py-2.5 rounded-xl font-black text-sm border transition-all active:scale-95',
+                                            busy ? 'bg-slate-600 text-slate-400 border-transparent'
+                                                : 'bg-slate-700 hover:bg-slate-600 text-white border-slate-600/50')}>
+                                        {busy ? <Loader2 className="w-4 h-4 animate-spin inline" /> : 'COBRAR TODO'}
                                     </button>
                                 </div>
                             )}
                         </>
                     ) : (
-                        /* Hermano al día */
                         <>
-                            <MonthGrid paidMonths={paidMonths} selectedMonths={[]} onToggle={() => { }} isProcessing={false} />
+                            <MonthGrid paid={paid} selected={[]} onToggle={() => { }} busy={false} />
                             <div className="flex items-center gap-2 p-3 bg-emerald-900/30 border border-emerald-700/30 rounded-xl">
                                 <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                                <p className="text-sm text-emerald-300 font-bold">¡Cuotas al día! Todo pagado en {currentYear}.</p>
+                                <p className="text-sm text-emerald-300 font-bold">¡Al día! Todo pagado en {year}.</p>
                             </div>
                         </>
                     )}
 
-                    {/* Contacto y mapa */}
-                    <div className="space-y-2">
-                        {hermano.telefono && (
-                            <a href={`tel:${hermano.telefono}`}
+                    {/* Contacto */}
+                    <div className="space-y-1.5">
+                        {h.telefono && (
+                            <a href={`tel:${h.telefono}`}
                                 className="flex items-center gap-2 p-2.5 bg-slate-700/40 rounded-xl text-sm text-slate-300 hover:bg-slate-700/60 transition-colors">
-                                <Phone className="w-4 h-4 text-primary flex-shrink-0" />
-                                <span className="font-medium">{hermano.telefono}</span>
+                                <Phone className="w-4 h-4 text-primary flex-shrink-0" />{h.telefono}
                             </a>
                         )}
-                        {hermano.direccion ? (
-                            <div className="space-y-2">
+                        {h.direccion ? (
+                            <div className="space-y-1.5">
                                 <div className="flex items-center gap-2 p-2.5 bg-slate-700/40 rounded-xl text-sm text-slate-300">
-                                    <Home className="w-4 h-4 text-primary flex-shrink-0" />
-                                    <span className="font-medium">{hermano.direccion}</span>
+                                    <Home className="w-4 h-4 text-primary flex-shrink-0" />{h.direccion}
                                 </div>
-                                <MapaHermano direccion={hermano.direccion} nombre={hermano.getNombreCompleto()} />
+                                <MapaCard dir={h.direccion} name={h.getNombreCompleto()} />
                             </div>
                         ) : (
                             <div className="flex items-center gap-2 p-2.5 bg-slate-700/30 rounded-xl text-sm text-slate-500">
-                                <MapPin className="w-4 h-4 flex-shrink-0" />
-                                <span className="italic">Dirección no registrada</span>
+                                <MapPin className="w-4 h-4" />Sin dirección registrada
                             </div>
                         )}
                     </div>
@@ -377,189 +226,219 @@ function HermanoCard({
     );
 }
 
-// --- Página principal ---
-
-type FilterType = 'pendiente' | 'pagado' | 'todos';
-type ViewType = 'lista' | 'mapa';
+type Filter = 'pendiente' | 'pagado' | 'todos';
+type View = 'lista' | 'mapa';
 
 export default function CobradorPage() {
-    const { hermanos, loading: loadingHermanos } = useHermanos();
-    const { recibos, loading: loadingRecibos, crearRecibo } = useRecibos();
+    const { hermanos, loading: lH } = useHermanos();
+    const { recibos, loading: lR, crearRecibo, refresh } = useRecibos();
     const { precios } = usePrecios({ activo: true, tipo: 'CUOTA' });
-    // ← CLAVE: usamos el mismo activeAnio que useRecibos para que el fetch/filtro coincidan
     const { activeAnio } = useConfiguracion();
 
-    const currentYear = activeAnio; // sincronizado con useRecibos
+    // Usar MISMO año que useRecibos internamente
+    const year = activeAnio;
 
-    const [searchTerm, setSearchTerm] = useState('');
-    const [filter, setFilter] = useState<FilterType>('pendiente');
-    const [expandedId, setExpandedId] = useState<string | null>(null);
-    const [processingId, setProcessingId] = useState<string | null>(null);
-    const [view, setView] = useState<ViewType>('lista');
-    const [successId, setSuccessId] = useState<string | null>(null);
+    const [search, setSearch] = useState('');
+    const [filter, setFilter] = useState<Filter>('pendiente');
+    const [openId, setOpenId] = useState<string | null>(null);
+    const [busyId, setBusyId] = useState<string | null>(null);
+    const [view, setView] = useState<View>('lista');
+    const [okId, setOkId] = useState<string | null>(null);
 
-    const cuotaEstandard = useMemo(() => {
-        const config = precios.find(p => p.activo && p.nombre.toUpperCase().includes('CUOT'))
-            || precios.find(p => p.activo);
-        return config ? config.importe : 1.50;
+    // Optimistic paid months — feedback inmediato sin esperar al DB
+    const [optPaid, setOptPaid] = useState<Record<string, number[]>>({});
+
+    // Limpiar optimistic cuando el DB ya refleja los datos
+    useEffect(() => {
+        setOptPaid(prev => {
+            const next = { ...prev };
+            let changed = false;
+            for (const [id, months] of Object.entries(next)) {
+                const dbPaid = pagosPorHermano[id] || [];
+                const rem = months.filter(m => !dbPaid.includes(m));
+                if (rem.length !== months.length) {
+                    changed = true;
+                    if (rem.length === 0) delete next[id];
+                    else next[id] = rem;
+                }
+            }
+            return changed ? next : prev;
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [recibos]);
+
+    // Polling cada 30s + refresco al volver a la pestaña
+    useEffect(() => {
+        const timer = setInterval(() => refresh(), 30000);
+        const onVisible = () => { if (document.visibilityState === 'visible') refresh(); };
+        document.addEventListener('visibilitychange', onVisible);
+        return () => { clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); };
+    }, [refresh]);
+
+    const rate = useMemo(() => {
+        const p = precios.find(p => p.activo && p.nombre.toUpperCase().includes('CUOT')) || precios.find(p => p.activo);
+        return p ? p.importe : 1.50;
     }, [precios]);
 
-    // Meses pagados por hermano en currentYear — se recalcula cada vez que `recibos` cambia
+    // Meses pagados según DB
     const pagosPorHermano = useMemo(() => {
-        const mapping: Record<string, number[]> = {};
+        const m: Record<string, number[]> = {};
         recibos.forEach(r => {
             if (r.tipo === 'CUOTA_ORDINARIA' && r.estado === 'COBRADO') {
-                const reciboYear = new Date(r.fechaEmision).getFullYear();
-                if (reciboYear === currentYear) {
-                    if (!mapping[r.hermanoId]) mapping[r.hermanoId] = [];
-                    const monthNumber = new Date(r.fechaEmision).getMonth() + 1;
-                    if (!mapping[r.hermanoId].includes(monthNumber)) {
-                        mapping[r.hermanoId].push(monthNumber);
-                    }
+                const y = new Date(r.fechaEmision).getFullYear();
+                if (y === year) {
+                    if (!m[r.hermanoId]) m[r.hermanoId] = [];
+                    const mn = new Date(r.fechaEmision).getMonth() + 1;
+                    if (!m[r.hermanoId].includes(mn)) m[r.hermanoId].push(mn);
                 }
             }
         });
-        return mapping;
-    }, [recibos, currentYear]);
+        return m;
+    }, [recibos, year]);
+
+    // Meses efectivos = DB + optimistic (sin duplicados)
+    const effectivePaid = useCallback((id: string) => {
+        const db = pagosPorHermano[id] || [];
+        const opt = optPaid[id] || [];
+        return [...new Set([...db, ...opt])].sort((a, b) => a - b);
+    }, [pagosPorHermano, optPaid]);
 
     const stats = useMemo(() => {
-        const total = hermanos.length;
-        const alDia = hermanos.filter(h => (pagosPorHermano[h.id]?.length || 0) === 12).length;
-        const pendiente = total - alDia;
-        const totalPendiente = hermanos.reduce((acc, h) => {
-            const paid = pagosPorHermano[h.id]?.length || 0;
-            return acc + (12 - paid) * cuotaEstandard;
+        const alDia = hermanos.filter(h => effectivePaid(h.id).length === 12).length;
+        const totalPend = hermanos.reduce((acc, h) => {
+            const p = effectivePaid(h.id).length;
+            return acc + (12 - p) * rate;
         }, 0);
-        return { total, alDia, pendiente, totalPendiente };
-    }, [hermanos, pagosPorHermano, cuotaEstandard]);
+        return { alDia, pendiente: hermanos.length - alDia, totalPend };
+    }, [hermanos, effectivePaid, rate]);
 
-    const filteredHermanos = useMemo(() => {
-        return hermanos
-            .filter(h => {
-                const paidCount = pagosPorHermano[h.id]?.length || 0;
-                if (filter === 'pendiente') return paidCount < 12;
-                if (filter === 'pagado') return paidCount === 12;
-                return true;
-            })
-            .filter(h => {
-                if (!searchTerm) return true;
-                const term = searchTerm.toLowerCase();
-                return (
-                    `${h.nombre} ${h.apellido1} ${h.apellido2 || ''}`.toLowerCase().includes(term) ||
-                    h.numeroHermano.toString().includes(term) ||
-                    (h.direccion || '').toLowerCase().includes(term)
-                );
-            })
-            .sort((a, b) => {
-                const pendA = 12 - (pagosPorHermano[a.id]?.length || 0);
-                const pendB = 12 - (pagosPorHermano[b.id]?.length || 0);
-                return pendB - pendA;
-            });
-    }, [hermanos, pagosPorHermano, filter, searchTerm]);
+    const list = useMemo(() => hermanos
+        .filter(h => {
+            const p = effectivePaid(h.id).length;
+            if (filter === 'pendiente') return p < 12;
+            if (filter === 'pagado') return p === 12;
+            return true;
+        })
+        .filter(h => {
+            if (!search) return true;
+            const t = search.toLowerCase();
+            return `${h.nombre} ${h.apellido1} ${h.apellido2 || ''}`.toLowerCase().includes(t)
+                || h.numeroHermano.toString().includes(t)
+                || (h.direccion || '').toLowerCase().includes(t);
+        })
+        .sort((a, b) => {
+            const pA = 12 - effectivePaid(a.id).length;
+            const pB = 12 - effectivePaid(b.id).length;
+            return pB - pA;
+        }),
+        [hermanos, effectivePaid, filter, search]);
 
-    // Función core de pago — NO cierra el card, deja que el grid se actualice solo
-    const handlePayMonths = useCallback(async (hermanoId: string, monthsToPay: number[]) => {
-        if (monthsToPay.length === 0) return;
-        setProcessingId(hermanoId);
+    const handlePay = useCallback(async (hermanoId: string, months: number[]) => {
+        if (!months.length) return;
+
+        // 1. Optimistic update — UI se actualiza INSTANTÁNEAMENTE
+        setOptPaid(prev => ({
+            ...prev,
+            [hermanoId]: [...new Set([...(prev[hermanoId] || []), ...months])]
+        }));
+
+        setBusyId(hermanoId);
         try {
-            for (const monthNumber of monthsToPay) {
-                const jsMonth = monthNumber - 1;
-                // Usamos currentYear (= activeAnio) para que coincida con el fetch de useRecibos
-                const dateObj = new Date(Date.UTC(currentYear, jsMonth, 1, 12, 0, 0));
+            for (const m of months) {
+                const jsM = m - 1;
                 await crearRecibo({
                     hermanoId,
-                    concepto: `Cuota ${MONTHS_LONG[jsMonth]} ${currentYear}`,
-                    importe: cuotaEstandard,
+                    concepto: `Cuota ${MONTHS_L[jsM]} ${year}`,
+                    importe: rate,
                     estado: 'COBRADO',
                     tipo: 'CUOTA_ORDINARIA',
-                    fechaEmision: dateObj,
-                    observaciones: 'Cobrado desde sección Cobrador'
+                    // Año sincronizado con activeAnio para que useRecibos lo encuentre
+                    fechaEmision: new Date(Date.UTC(year, jsM, 1, 12, 0, 0)),
+                    observaciones: 'Cobrado desde Cobrador'
                 });
             }
-            // Flash de éxito breve
-            setSuccessId(hermanoId);
-            setTimeout(() => setSuccessId(null), 2500);
-            // Si eran todos los meses pendientes, colapsamos el card
-            const hadPaid = pagosPorHermano[hermanoId]?.length || 0;
-            if (hadPaid + monthsToPay.length >= 12) {
-                setExpandedId(null);
-            }
-            // Si es pago parcial, el card permanece abierto para continuar cobrando
+            setOkId(hermanoId);
+            setTimeout(() => setOkId(null), 2500);
+
+            // Si ya pagó todo, cerrar card
+            const totalPaidNow = effectivePaid(hermanoId).length;
+            if (totalPaidNow >= 12) setOpenId(null);
+
         } catch (err) {
-            console.error('Error al registrar cobro:', err);
+            // Rollback optimistic si falla
+            setOptPaid(prev => ({
+                ...prev,
+                [hermanoId]: (prev[hermanoId] || []).filter(m => !months.includes(m))
+            }));
+            console.error(err);
             alert('Error al procesar el cobro. Inténtalo de nuevo.');
         } finally {
-            setProcessingId(null);
+            setBusyId(null);
         }
-    }, [currentYear, cuotaEstandard, crearRecibo, pagosPorHermano]);
+    }, [year, rate, crearRecibo, effectivePaid]);
 
-    const isLoading = loadingHermanos || loadingRecibos;
+    const loading = lH || lR;
 
     return (
         <div className="min-h-screen bg-slate-950 text-white">
             {/* Header fijo */}
             <div className="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-xl border-b border-slate-800">
-                <div className="px-4 pt-4 pb-3">
-                    <div className="flex items-center justify-between mb-4">
+                <div className="px-4 pt-4 pb-3 space-y-3">
+                    <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-2xl font-black text-white tracking-tight">Cobrador</h1>
-                            <p className="text-xs text-slate-500 font-medium">
-                                Campaña {currentYear} · {stats.pendiente} pendientes
-                            </p>
+                            <h1 className="text-2xl font-black tracking-tight">Cobrador</h1>
+                            <p className="text-xs text-slate-500">Campaña {year} · {stats.pendiente} pendientes</p>
                         </div>
-                        <div className="flex items-center bg-slate-800 rounded-xl p-1 gap-1">
-                            <button onClick={() => setView('lista')}
-                                className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all',
-                                    view === 'lista' ? 'bg-primary text-white' : 'text-slate-500 hover:text-slate-300')}>
-                                <List className="w-3.5 h-3.5" />Lista
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => refresh()} title="Actualizar datos"
+                                className="p-2 rounded-xl bg-slate-800 text-slate-500 hover:text-white transition-colors">
+                                <RefreshCw className="w-4 h-4" />
                             </button>
-                            <button onClick={() => setView('mapa')}
-                                className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all',
-                                    view === 'mapa' ? 'bg-primary text-white' : 'text-slate-500 hover:text-slate-300')}>
-                                <MapIcon className="w-3.5 h-3.5" />Mapa
-                            </button>
+                            <div className="flex items-center bg-slate-800 rounded-xl p-1 gap-1">
+                                <button onClick={() => setView('lista')}
+                                    className={cn('flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-black transition-all',
+                                        view === 'lista' ? 'bg-primary text-white' : 'text-slate-500')}>
+                                    <List className="w-3.5 h-3.5" />Lista
+                                </button>
+                                <button onClick={() => setView('mapa')}
+                                    className={cn('flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-black transition-all',
+                                        view === 'mapa' ? 'bg-primary text-white' : 'text-slate-500')}>
+                                    <MapIcon className="w-3.5 h-3.5" />Mapa
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="grid grid-cols-3 gap-2 mb-4">
-                        <div className="bg-red-950/50 border border-red-800/30 rounded-xl p-2.5 text-center">
+                    <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-red-950/50 border border-red-800/30 rounded-xl p-2 text-center">
                             <p className="text-xl font-black text-red-400">{stats.pendiente}</p>
-                            <p className="text-[10px] text-red-500/80 font-bold uppercase tracking-wider">Pendientes</p>
+                            <p className="text-[10px] text-red-500/80 font-bold uppercase">Pendientes</p>
                         </div>
-                        <div className="bg-emerald-950/50 border border-emerald-800/30 rounded-xl p-2.5 text-center">
+                        <div className="bg-emerald-950/50 border border-emerald-800/30 rounded-xl p-2 text-center">
                             <p className="text-xl font-black text-emerald-400">{stats.alDia}</p>
-                            <p className="text-[10px] text-emerald-500/80 font-bold uppercase tracking-wider">Al día</p>
+                            <p className="text-[10px] text-emerald-500/80 font-bold uppercase">Al día</p>
                         </div>
-                        <div className="bg-primary/10 border border-primary/20 rounded-xl p-2.5 text-center">
-                            <p className="text-sm font-black text-primary leading-tight">{formatCurrency(stats.totalPendiente)}</p>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Sin cobrar</p>
+                        <div className="bg-primary/10 border border-primary/20 rounded-xl p-2 text-center">
+                            <p className="text-sm font-black text-primary">{formatCurrency(stats.totalPend)}</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase">Sin cobrar</p>
                         </div>
                     </div>
 
-                    {/* Búsqueda */}
-                    <div className="relative mb-3">
+                    <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                        <input type="search" placeholder="Buscar por nombre, número o dirección..."
-                            value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-all"
-                        />
-                        {searchTerm && (
-                            <button onClick={() => setSearchTerm('')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">
-                                <X className="w-4 h-4" />
-                            </button>
-                        )}
+                        <input type="search" placeholder="Nombre, número o dirección..."
+                            value={search} onChange={e => setSearch(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-primary/50 transition-all" />
+                        {search && <button onClick={() => setSearch('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"><X className="w-4 h-4" /></button>}
                     </div>
 
-                    {/* Filtros */}
                     <div className="flex gap-2">
-                        {(['pendiente', 'todos', 'pagado'] as FilterType[]).map(f => (
+                        {(['pendiente', 'todos', 'pagado'] as Filter[]).map(f => (
                             <button key={f} onClick={() => setFilter(f)}
-                                className={cn('flex-1 py-2 rounded-xl text-xs font-black uppercase tracking-wide transition-all',
+                                className={cn('flex-1 py-2 rounded-xl text-xs font-black uppercase transition-all',
                                     filter === f
-                                        ? f === 'pendiente' ? 'bg-red-600 text-white'
-                                            : f === 'pagado' ? 'bg-emerald-600 text-white' : 'bg-primary text-white'
+                                        ? f === 'pendiente' ? 'bg-red-600 text-white' : f === 'pagado' ? 'bg-emerald-600 text-white' : 'bg-primary text-white'
                                         : 'bg-slate-800 text-slate-500 hover:text-white')}>
                                 {f === 'pendiente' ? '⚠ Pendientes' : f === 'pagado' ? '✓ Al día' : '≡ Todos'}
                             </button>
@@ -568,103 +447,80 @@ export default function CobradorPage() {
                 </div>
             </div>
 
-            {/* Contenido */}
             <div className="px-4 py-4 space-y-3 pb-8">
-                {isLoading ? (
+                {loading ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-4">
-                        <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center">
-                            <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                        </div>
-                        <p className="text-slate-400 font-medium">Cargando hermanos...</p>
+                        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                        <p className="text-slate-400">Cargando...</p>
                     </div>
-                ) : filteredHermanos.length === 0 ? (
+                ) : list.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-4">
-                        <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center">
-                            <User className="w-8 h-8 text-slate-600" />
-                        </div>
-                        <div className="text-center">
-                            <p className="text-slate-300 font-bold">Sin resultados</p>
-                            <p className="text-slate-500 text-sm mt-1">
-                                {filter === 'pendiente' ? '¡Todos los hermanos están al día!' : 'No se encontraron hermanos'}
-                            </p>
-                        </div>
-                        {(filter !== 'todos' || searchTerm) && (
-                            <button onClick={() => { setFilter('todos'); setSearchTerm(''); }}
-                                className="flex items-center gap-2 text-primary text-sm font-bold hover:text-primary/80">
+                        <User className="w-12 h-12 text-slate-700" />
+                        <p className="text-slate-400 font-bold">
+                            {filter === 'pendiente' ? '¡Todos al día!' : 'Sin resultados'}
+                        </p>
+                        {(filter !== 'todos' || search) && (
+                            <button onClick={() => { setFilter('todos'); setSearch(''); }}
+                                className="flex items-center gap-2 text-primary text-sm font-bold">
                                 <RotateCcw className="w-4 h-4" />Ver todos
                             </button>
                         )}
                     </div>
                 ) : view === 'lista' ? (
                     <>
-                        <p className="text-xs text-slate-600 font-bold uppercase tracking-wider px-1">
-                            {filteredHermanos.length} hermano{filteredHermanos.length !== 1 ? 's' : ''}
-                        </p>
-                        {filteredHermanos.map(hermano => (
-                            <div key={hermano.id} className="relative">
-                                {/* Toast éxito */}
-                                {successId === hermano.id && (
-                                    <div className="absolute -top-2 left-0 right-0 flex justify-center z-10 animate-in fade-in slide-in-from-top-2 duration-300">
-                                        <div className="flex items-center gap-2 bg-emerald-600 text-white text-xs font-black px-4 py-2 rounded-full shadow-lg shadow-emerald-900/50">
-                                            <CheckCircle2 className="w-3.5 h-3.5" />
-                                            ¡Cobro registrado!
+                        <p className="text-xs text-slate-600 font-bold uppercase px-1">{list.length} hermanos</p>
+                        {list.map(h => (
+                            <div key={h.id} className="relative">
+                                {okId === h.id && (
+                                    <div className="absolute -top-2 inset-x-0 flex justify-center z-10 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <div className="flex items-center gap-2 bg-emerald-600 text-white text-xs font-black px-4 py-1.5 rounded-full shadow-lg">
+                                            <CheckCircle2 className="w-3.5 h-3.5" />¡Cobro registrado!
                                         </div>
                                     </div>
                                 )}
-                                <HermanoCard
-                                    hermano={hermano}
-                                    paidMonths={pagosPorHermano[hermano.id] || []}
-                                    cuotaEstandard={cuotaEstandard}
-                                    currentYear={currentYear}
-                                    isExpanded={expandedId === hermano.id}
-                                    isProcessing={processingId === hermano.id}
-                                    onToggle={() => setExpandedId(expandedId === hermano.id ? null : hermano.id)}
-                                    onPayMonths={handlePayMonths}
+                                <HCard
+                                    h={h}
+                                    paid={effectivePaid(h.id)}
+                                    rate={rate}
+                                    year={year}
+                                    expanded={openId === h.id}
+                                    busy={busyId === h.id}
+                                    onToggle={() => setOpenId(openId === h.id ? null : h.id)}
+                                    onPay={handlePay}
                                 />
                             </div>
                         ))}
                     </>
                 ) : (
-                    /* Vista Mapa */
                     <div className="space-y-3">
-                        <p className="text-xs text-slate-600 font-bold uppercase tracking-wider px-1">
-                            Hermanos con dirección registrada
-                        </p>
-                        {filteredHermanos.filter(h => h.direccion).length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-16 gap-4">
-                                <MapPin className="w-12 h-12 text-slate-700" />
-                                <div className="text-center">
-                                    <p className="text-slate-400 font-bold">Sin direcciones registradas</p>
-                                    <p className="text-slate-600 text-sm">Los hermanos de tu lista no tienen dirección guardada.</p>
-                                </div>
+                        <p className="text-xs text-slate-600 font-bold uppercase px-1">Con dirección registrada</p>
+                        {list.filter(h => h.direccion).length === 0 ? (
+                            <div className="flex flex-col items-center py-16 gap-3">
+                                <MapPin className="w-10 h-10 text-slate-700" />
+                                <p className="text-slate-500 text-sm">Sin direcciones registradas</p>
                             </div>
-                        ) : filteredHermanos.filter(h => h.direccion).map(hermano => {
-                            const paidMonths = pagosPorHermano[hermano.id] || [];
-                            const pendingCount = 12 - paidMonths.length;
+                        ) : list.filter(h => h.direccion).map(h => {
+                            const epaid = effectivePaid(h.id);
+                            const pend = ALL_MONTHS.filter(m => !epaid.includes(m));
                             return (
-                                <div key={hermano.id} className="rounded-2xl border border-slate-700/50 bg-slate-800/30 overflow-hidden">
+                                <div key={h.id} className="rounded-2xl border border-slate-700/50 bg-slate-800/30 overflow-hidden">
                                     <div className="flex items-center gap-3 p-3">
-                                        <div className={cn(
-                                            'w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0',
-                                            pendingCount === 0 ? 'bg-emerald-900/60 text-emerald-400' : 'bg-red-900/60 text-red-400'
-                                        )}>
-                                            {hermano.numeroHermano}
+                                        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0',
+                                            pend.length === 0 ? 'bg-emerald-900/60 text-emerald-400' : 'bg-red-900/60 text-red-400')}>
+                                            {h.numeroHermano}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="font-black text-white text-sm truncate">{hermano.getNombreCompleto()}</p>
-                                            <StatusBadge paidCount={paidMonths.length} />
+                                            <p className="font-black text-white text-sm truncate">{h.getNombreCompleto()}</p>
+                                            <StatusBadge n={epaid.length} />
                                         </div>
-                                        {pendingCount > 0 && (
-                                            <button
-                                                onClick={() => handlePayMonths(hermano.id, ALL_MONTHS.filter(m => !paidMonths.includes(m)))}
-                                                disabled={processingId === hermano.id}
-                                                className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-white text-xs font-black rounded-xl flex-shrink-0 transition-colors active:scale-95"
-                                            >
-                                                {processingId === hermano.id ? <Loader2 className="w-3 h-3 animate-spin" /> : 'COBRAR'}
+                                        {pend.length > 0 && (
+                                            <button onClick={() => handlePay(h.id, pend)} disabled={busyId === h.id}
+                                                className="px-3 py-1.5 bg-primary text-white text-xs font-black rounded-xl active:scale-95">
+                                                {busyId === h.id ? <Loader2 className="w-3 h-3 animate-spin" /> : 'COBRAR'}
                                             </button>
                                         )}
                                     </div>
-                                    <MapaHermano direccion={hermano.direccion!} nombre={hermano.getNombreCompleto()} />
+                                    <MapaCard dir={h.direccion!} name={h.getNombreCompleto()} />
                                 </div>
                             );
                         })}
