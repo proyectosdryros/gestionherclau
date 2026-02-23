@@ -5,23 +5,38 @@ import React, { useState, useMemo } from 'react';
 import { useRecibos } from '@/presentation/hooks/useRecibos';
 import { useHermanos } from '@/presentation/hooks/useHermanos';
 import { usePrecios } from '@/presentation/hooks/usePrecios';
+import { useConfiguracion } from '@/presentation/hooks/useConfiguracion';
 import { Card, CardHeader, CardTitle, CardContent } from '@/presentation/components/ui/Card';
 import { Button } from '@/presentation/components/ui/Button';
 import { Input } from '@/presentation/components/ui/Input';
 import { Badge } from '@/presentation/components/ui/Badge';
-import { Search, Plus, Filter, Wallet, MoreVertical, CreditCard, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Plus, Filter, Wallet, MoreVertical, CreditCard, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import { Modal } from '@/presentation/components/ui/Modal';
 import { formatCurrency, cn } from '@/lib/utils';
 import { TipoRecibo, Recibo } from '@/core/domain/entities/Recibo';
 import { CuotasGrid } from '@/presentation/components/tesoreria/CuotasGrid';
 
 export default function TesoreriaPage() {
-    const { recibos, loading, error, registrarCobro, crearRecibo } = useRecibos();
+    const { recibos, loading, error, registrarCobro, crearRecibo, refresh } = useRecibos();
     const { hermanos } = useHermanos(); // Load brothers for selection
     const { precios } = usePrecios();
-    const cuotaEstandard = precios.find(p => p.tipo === 'CUOTA' && p.anio === new Date().getFullYear())?.importe || 1.5;
+    const { activeAnio } = useConfiguracion();
+
+    // Exact same rate logic as Cobrador
+    const cuotaEstandard = useMemo(() => {
+        const p = precios.find(p => p.activo && p.nombre.toUpperCase().includes('CUOT')) || precios.find(p => p.activo);
+        return p ? p.importe : 1.50;
+    }, [precios]);
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedHermanoId, setExpandedHermanoId] = useState<string | null>(null);
+
+    // Polling cada 30s + refresco al volver a la pestaña para estar sync con Cobrador
+    React.useEffect(() => {
+        const timer = setInterval(() => refresh(), 30000);
+        const onVisible = () => { if (document.visibilityState === 'visible') refresh(); };
+        document.addEventListener('visibilitychange', onVisible);
+        return () => { clearInterval(timer); document.removeEventListener('visibilitychange', onVisible); };
+    }, [refresh]);
 
     // Payment Modal State
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -45,7 +60,7 @@ export default function TesoreriaPage() {
     // Agrupar recibos por hermano para la vista de cuadrícula
     const recibosPorHermano = useMemo(() => {
         const mapping: Record<string, { pagos: number[], pendientes: number[] }> = {};
-        const anioActual = new Date().getFullYear();
+        const anioActual = activeAnio; // Usamos el año de configuración activo
 
         hermanos.forEach(h => {
             mapping[h.id] = { pagos: [], pendientes: [] };
@@ -55,8 +70,10 @@ export default function TesoreriaPage() {
             const rYear = new Date(r.fechaEmision).getFullYear();
             if (rYear === anioActual && r.tipo === 'CUOTA_ORDINARIA' && r.estado === 'COBRADO') {
                 if (!mapping[r.hermanoId]) mapping[r.hermanoId] = { pagos: [], pendientes: [] };
-                const month = new Date(r.fechaEmision).getMonth() + 1;
-                mapping[r.hermanoId].pagos.push(month);
+                const jsMonth = new Date(r.fechaEmision).getMonth() + 1;
+                if (!mapping[r.hermanoId].pagos.includes(jsMonth)) {
+                    mapping[r.hermanoId].pagos.push(jsMonth);
+                }
             }
         });
 
@@ -66,7 +83,7 @@ export default function TesoreriaPage() {
         });
 
         return mapping;
-    }, [recibos, hermanos]);
+    }, [recibos, hermanos, activeAnio]);
 
     const handleOpenPayment = (id: string) => {
         setSelectedReciboId(id);
