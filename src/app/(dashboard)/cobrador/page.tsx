@@ -326,11 +326,7 @@ export default function CobradorPage() {
                 || h.numeroHermano.toString().includes(t)
                 || (h.direccion || '').toLowerCase().includes(t);
         })
-        .sort((a, b) => {
-            const pA = 12 - effectivePaid(a.id).length;
-            const pB = 12 - effectivePaid(b.id).length;
-            return pB - pA;
-        }),
+        .sort((a, b) => a.numeroHermano - b.numeroHermano),
         [hermanos, effectivePaid, filter, search]);
 
     const handlePay = useCallback(async (hermanoId: string, months: number[]) => {
