@@ -175,10 +175,9 @@ export default function TesoreriaPage() {
                         <div className="text-2xl font-bold text-amber-600">
                             {formatCurrency(
                                 Object.values(recibosPorHermano).reduce((acc, curr) => acc + (curr.pendientes.length * cuotaEstandard), 0)
-                                + recibos.filter(r => r.estado === 'PENDIENTE' && r.tipo !== 'CUOTA_ORDINARIA').reduce((acc, r) => acc + r.importe, 0)
                             )}
                         </div>
-                        <p className="text-xs text-muted-foreground">Cuotas y cobros pendientes</p>
+                        <p className="text-xs text-muted-foreground">Cuotas pendientes ({activeAnio})</p>
                     </CardContent>
                 </Card>
             </div>

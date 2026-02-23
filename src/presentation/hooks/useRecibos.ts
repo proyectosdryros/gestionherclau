@@ -29,13 +29,29 @@ export function useRecibos() {
 
     useEffect(() => {
         refresh();
+        if (typeof window !== 'undefined' && window.BroadcastChannel) {
+            const channel = new BroadcastChannel('sync_recibos_channel');
+            channel.onmessage = (event) => {
+                if (event.data === 'RELOAD') refresh();
+            };
+            return () => channel.close();
+        }
     }, [refresh]);
+
+    const notifySync = () => {
+        if (typeof window !== 'undefined' && window.BroadcastChannel) {
+            const channel = new BroadcastChannel('sync_recibos_channel');
+            channel.postMessage('RELOAD');
+            channel.close();
+        }
+    };
 
     const crearRecibo = async (recibo: Omit<Recibo, 'id' | 'auditoria' | 'cobrar' | 'anular' | 'update'>) => {
         try {
             setLoading(true);
             await reciboRepo.create(recibo);
             await refresh();
+            notifySync();
         } catch (err) {
             console.error(err);
             throw err;
@@ -55,6 +71,7 @@ export function useRecibos() {
             await reciboRepo.update(recibo);
 
             await refresh();
+            notifySync();
         } catch (err) {
             console.error(err);
             throw err;
@@ -66,6 +83,7 @@ export function useRecibos() {
             setLoading(true);
             await reciboRepo.delete(reciboId);
             await refresh();
+            notifySync();
         } catch (err) {
             console.error(err);
             throw err;
