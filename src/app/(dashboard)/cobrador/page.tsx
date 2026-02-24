@@ -9,7 +9,7 @@ import { cn, formatCurrency } from '@/lib/utils';
 import {
     MapPin, Search, CheckCircle2, XCircle, ChevronRight,
     Navigation, Phone, Euro, Loader2, RotateCcw,
-    Map as MapIcon, List, X, Home, SquareCheck, User, RefreshCw
+    Map as MapIcon, List, X, Home, SquareCheck, User, RefreshCw, ChevronDown
 } from 'lucide-react';
 import { Hermano } from '@/core/domain/entities/Hermano';
 
@@ -244,6 +244,24 @@ export default function CobradorPage() {
     const [busyId, setBusyId] = useState<string | null>(null);
     const [view, setView] = useState<View>('lista');
     const [okId, setOkId] = useState<string | null>(null);
+    const [distrito, setDistrito] = useState<string>('');
+
+    // Distritos comunes en Ayamonte y pedanías
+    const distritos = [
+        'La Villa',
+        'La Ribera',
+        'Centro',
+        'Salón Santa Gadea',
+        'Salón Gadea',
+        'Federico Mayo',
+        'Costa Esuri',
+        'Isla Canela',
+        'Punta del Moral',
+        'Pozo del Camino',
+        'Las Moreras',
+        'Julio Romero de Torres',
+        'El Estanque'
+    ];
 
     // Optimistic paid months — feedback inmediato sin esperar al DB
     const [optPaid, setOptPaid] = useState<Record<string, number[]>>({});
@@ -326,8 +344,12 @@ export default function CobradorPage() {
                 || h.numeroHermano.toString().includes(t)
                 || (h.direccion || '').toLowerCase().includes(t);
         })
+        .filter(h => {
+            if (!distrito) return true;
+            return (h.direccion || '').toLowerCase().includes(distrito.toLowerCase());
+        })
         .sort((a, b) => a.numeroHermano - b.numeroHermano),
-        [hermanos, effectivePaid, filter, search]);
+        [hermanos, effectivePaid, filter, search, distrito]);
 
     const handlePay = useCallback(async (hermanoId: string, months: number[]) => {
         if (!months.length) return;
@@ -420,13 +442,28 @@ export default function CobradorPage() {
                         </div>
                     </div>
 
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                        <input type="search" placeholder="Nombre, número o dirección..."
-                            value={search} onChange={e => setSearch(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-primary/50 transition-all" />
-                        {search && <button onClick={() => setSearch('')}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"><X className="w-4 h-4" /></button>}
+                    <div className="flex gap-2">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                            <input type="search" placeholder="Buscar..."
+                                value={search} onChange={e => setSearch(e.target.value)}
+                                className="w-full pl-9 pr-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-primary/50 transition-all" />
+                            {search && <button onClick={() => setSearch('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"><X className="w-4 h-4" /></button>}
+                        </div>
+                        <div className="relative w-1/3">
+                            <select
+                                value={distrito}
+                                onChange={e => setDistrito(e.target.value)}
+                                className="w-full appearance-none bg-slate-800 border border-slate-700 rounded-xl pl-3 pr-8 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-primary/50 transition-all"
+                            >
+                                <option value="">🌐 Todos</option>
+                                {distritos.map(d => (
+                                    <option key={d} value={d}>{d}</option>
+                                ))}
+                            </select>
+                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
+                        </div>
                     </div>
 
                     <div className="flex gap-2">
