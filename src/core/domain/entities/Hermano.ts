@@ -43,6 +43,7 @@ export class Hermano {
         public readonly auditoria: AuditoriaFields,
         public readonly apodo: string | null = null,
         public readonly direccion: string | null = null,
+        public readonly distrito: string | null = null,
         public readonly rol: string | null = 'HERMANO',
         public readonly userId: string | null = null
     ) { }
@@ -90,6 +91,7 @@ export class Hermano {
             },
             updates.apodo !== undefined ? updates.apodo : this.apodo,
             updates.direccion !== undefined ? updates.direccion : this.direccion,
+            updates.distrito !== undefined ? updates.distrito : this.distrito,
             updates.rol !== undefined ? updates.rol : this.rol,
             updates.userId !== undefined ? updates.userId : this.userId
         );

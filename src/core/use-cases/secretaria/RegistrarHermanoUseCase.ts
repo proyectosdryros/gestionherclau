@@ -13,6 +13,7 @@ export interface RegistrarHermanoInput {
     nombre: string;
     apodo?: string | null;
     direccion?: string | null;
+    distrito?: string | null;
     apellido1: string;
     apellido2?: string | null;
     dni?: string | null;
@@ -70,7 +71,8 @@ export class RegistrarHermanoUseCase {
                 version: 1,
             },
             input.apodo?.trim() ?? null,
-            input.direccion?.trim() ?? null
+            input.direccion?.trim() ?? null,
+            input.distrito?.trim() ?? null
         );
 
         // 5. Persistir

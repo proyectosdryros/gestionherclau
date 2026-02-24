@@ -346,7 +346,7 @@ export default function CobradorPage() {
         })
         .filter(h => {
             if (!distrito) return true;
-            return (h.direccion || '').toLowerCase().includes(distrito.toLowerCase());
+            return h.distrito === distrito;
         })
         .sort((a, b) => a.numeroHermano - b.numeroHermano),
         [hermanos, effectivePaid, filter, search, distrito]);

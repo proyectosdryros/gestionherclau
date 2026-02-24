@@ -202,6 +202,8 @@ export class InsForgeHermanoRepository implements HermanoRepository {
             },
             data.apodo,
             data.direccion,
+            data.distrito,
+            data.rol,
             data.user_id
         );
     }
@@ -213,6 +215,8 @@ export class InsForgeHermanoRepository implements HermanoRepository {
             nombre: hermano.nombre,
             apodo: hermano.apodo,
             direccion: hermano.direccion,
+            distrito: hermano.distrito,
+            rol: hermano.rol,
             user_id: hermano.userId,
             apellido1: hermano.apellido1,
             apellido2: hermano.apellido2,

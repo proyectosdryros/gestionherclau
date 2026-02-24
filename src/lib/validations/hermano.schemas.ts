@@ -94,6 +94,7 @@ export const HermanoSchema = z.object({
     nombre: z.string().min(2, 'Nombre debe tener al menos 2 caracteres').max(50),
     apodo: z.string().max(50).optional().nullable(),
     direccion: z.string().max(100).optional().nullable(),
+    distrito: z.string().max(100).optional().nullable(),
     apellido1: z.string().min(2, 'Primer apellido debe tener al menos 2 caracteres').max(50),
     apellido2: z.string().max(50).nullable(),
     dni: DniSchema,

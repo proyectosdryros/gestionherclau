@@ -14,6 +14,12 @@ import { ActualizarHermanoUseCase } from '@/core/use-cases/secretaria/Actualizar
 import type { Hermano } from '@/core/domain/entities/Hermano';
 import { useState } from 'react';
 
+const DISTRITOS_AYAMONTE = [
+    'La Villa', 'La Ribera', 'Centro', 'Salón Santa Gadea', 'Salón Gadea',
+    'Federico Mayo', 'Costa Esuri', 'Isla Canela', 'Punta del Moral',
+    'Pozo del Camino', 'Las Moreras', 'Julio Romero de Torres', 'El Estanque'
+];
+
 const repository = new InsForgeHermanoRepository();
 const registrarUseCase = new RegistrarHermanoUseCase(repository);
 const actualizarUseCase = new ActualizarHermanoUseCase(repository);
@@ -41,6 +47,7 @@ export function HermanoForm({ hermano, onSuccess, onCancel }: HermanoFormProps) 
                 nombre: hermano.nombre,
                 apodo: (hermano as any).apodo ?? null,
                 direccion: (hermano as any).direccion ?? null,
+                distrito: (hermano as any).distrito ?? null,
                 apellido1: hermano.apellido1,
                 apellido2: hermano.apellido2 ?? null,
                 dni: hermano.dni?.getValue() ?? null,
@@ -155,6 +162,26 @@ export function HermanoForm({ hermano, onSuccess, onCancel }: HermanoFormProps) 
                         />
                         {errors.direccion && (
                             <p className="text-[10px] text-red-500 mt-0.5">{errors.direccion.message}</p>
+                        )}
+                    </div>
+
+                    {/* Distrito */}
+                    <div>
+                        <label htmlFor="distrito" className="block text-xs font-medium mb-1 text-muted-foreground">
+                            Distrito de Reparto
+                        </label>
+                        <select
+                            {...register('distrito')}
+                            id="distrito"
+                            className="w-full px-2 py-1.5 border rounded-md bg-background text-sm"
+                        >
+                            <option value="">-- No especificado --</option>
+                            {DISTRITOS_AYAMONTE.map(d => (
+                                <option key={d} value={d}>{d}</option>
+                            ))}
+                        </select>
+                        {errors.distrito && (
+                            <p className="text-[10px] text-red-500 mt-0.5">{errors.distrito.message}</p>
                         )}
                     </div>
 
