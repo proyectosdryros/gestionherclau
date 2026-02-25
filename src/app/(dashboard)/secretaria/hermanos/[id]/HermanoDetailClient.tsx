@@ -12,7 +12,7 @@ import { Modal } from '@/presentation/components/ui/Modal';
 import { HermanoForm } from '@/presentation/components/hermanos/HermanoForm';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { PencilIcon, ArrowLeftIcon } from 'lucide-react';
+import { PencilIcon, ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { useRecibos } from '@/presentation/hooks/useRecibos';
 import { formatCurrency } from '@/lib/utils';
 
@@ -59,6 +59,10 @@ export function HermanoDetailClient({ id }: HermanoDetailClientProps) {
     const [error, setError] = useState<string | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [neighbors, setNeighbors] = useState<{ prevId: string | null; nextId: string | null }>({
+        prevId: null,
+        nextId: null
+    });
 
     const { recibos, loading: loadingRecibos } = useRecibos();
 
@@ -99,6 +103,14 @@ export function HermanoDetailClient({ id }: HermanoDetailClientProps) {
     useEffect(() => {
         loadHermano();
     }, [loadHermano]);
+
+    useEffect(() => {
+        if (hermano) {
+            hermanoRepository.findNeighbors(hermano.numeroHermano)
+                .then(setNeighbors)
+                .catch(err => console.error('Error fetching neighbors:', err));
+        }
+    }, [hermano?.numeroHermano]);
 
     const handleCreateFamiliar = async (data: FamiliarCreateDTO & { hermanoId: string }) => {
         try {
@@ -184,12 +196,32 @@ export function HermanoDetailClient({ id }: HermanoDetailClientProps) {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => router.back()}
-                        className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-                    >
-                        <ArrowLeftIcon className="w-5 h-5" />
-                    </button>
+                    <div className="flex items-center gap-1 mr-2">
+                        <button
+                            onClick={() => router.back()}
+                            className="p-2 hover:bg-slate-100 rounded-full transition-colors text-gray-500"
+                            title="Volver"
+                        >
+                            <ArrowLeftIcon className="w-5 h-5" />
+                        </button>
+                        <div className="w-px h-6 bg-slate-200 mx-1" />
+                        <button
+                            onClick={() => neighbors.prevId && router.push(`/secretaria/hermanos/${neighbors.prevId}`)}
+                            disabled={!neighbors.prevId}
+                            className={`p-2 rounded-full transition-colors ${neighbors.prevId ? 'hover:bg-slate-100 text-gray-600' : 'text-gray-300 cursor-not-allowed'}`}
+                            title="Anterior"
+                        >
+                            <ChevronLeftIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                            onClick={() => neighbors.nextId && router.push(`/secretaria/hermanos/${neighbors.nextId}`)}
+                            disabled={!neighbors.nextId}
+                            className={`p-2 rounded-full transition-colors ${neighbors.nextId ? 'hover:bg-slate-100 text-gray-600' : 'text-gray-300 cursor-not-allowed'}`}
+                            title="Siguiente"
+                        >
+                            <ChevronRightIcon className="w-5 h-5" />
+                        </button>
+                    </div>
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">
                             {hermano.getNombreCompleto()}

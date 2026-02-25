@@ -253,4 +253,22 @@ export class DexieHermanoRepository implements HermanoRepository {
         }
         return await db.hermanos.count();
     }
+
+    async findNeighbors(numeroHermano: number): Promise<{ prevId: string | null; nextId: string | null }> {
+        const prev = await db.hermanos
+            .where('numeroHermano')
+            .below(numeroHermano)
+            .reverse()
+            .first();
+
+        const next = await db.hermanos
+            .where('numeroHermano')
+            .above(numeroHermano)
+            .first();
+
+        return {
+            prevId: prev ? (prev as any).id : null,
+            nextId: next ? (next as any).id : null
+        };
+    }
 }

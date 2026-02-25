@@ -70,4 +70,8 @@ export interface HermanoRepository {
      * Cuenta total de hermanos
      */
     count(filters?: { estado?: string }): Promise<number>;
+    /**
+     * Obtiene los IDs de los hermanos anterior y siguiente por número de hermano
+     */
+    findNeighbors(numeroHermano: number): Promise<{ prevId: string | null; nextId: string | null }>;
 }

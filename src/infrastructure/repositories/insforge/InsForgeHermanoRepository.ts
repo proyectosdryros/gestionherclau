@@ -177,6 +177,27 @@ export class InsForgeHermanoRepository implements HermanoRepository {
         return count || 0;
     }
 
+    async findNeighbors(numeroHermano: number): Promise<{ prevId: string | null; nextId: string | null }> {
+        const { data: prevData } = await insforge.database
+            .from('hermanos')
+            .select('id')
+            .lt('numeroHermano', numeroHermano)
+            .order('numeroHermano', { ascending: false })
+            .limit(1);
+
+        const { data: nextData } = await insforge.database
+            .from('hermanos')
+            .select('id')
+            .gt('numeroHermano', numeroHermano)
+            .order('numeroHermano', { ascending: true })
+            .limit(1);
+
+        return {
+            prevId: prevData && prevData.length > 0 ? (prevData[0] as any).id : null,
+            nextId: nextData && nextData.length > 0 ? (nextData[0] as any).id : null
+        };
+    }
+
     // Mappers
     private mapToDomain(data: any): Hermano {
         return new Hermano(
