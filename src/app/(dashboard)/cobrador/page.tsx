@@ -12,6 +12,7 @@ import {
     Map as MapIcon, List, X, Home, SquareCheck, User, RefreshCw, ChevronDown
 } from 'lucide-react';
 import { Hermano } from '@/core/domain/entities/Hermano';
+import { SECTORES_AYAMONTE } from '@/lib/data/sectores-ayamonte';
 
 const MONTHS_S = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 const MONTHS_L = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -246,22 +247,6 @@ export default function CobradorPage() {
     const [okId, setOkId] = useState<string | null>(null);
     const [distrito, setDistrito] = useState<string>('');
 
-    // Distritos comunes en Ayamonte y pedanías
-    const distritos = [
-        'La Villa',
-        'La Ribera',
-        'Centro',
-        'Salón Santa Gadea',
-        'Salón Gadea',
-        'Federico Mayo',
-        'Costa Esuri',
-        'Isla Canela',
-        'Punta del Moral',
-        'Pozo del Camino',
-        'Las Moreras',
-        'Julio Romero de Torres',
-        'El Estanque'
-    ];
 
     // Optimistic paid months — feedback inmediato sin esperar al DB
     const [optPaid, setOptPaid] = useState<Record<string, number[]>>({});
@@ -320,6 +305,17 @@ export default function CobradorPage() {
         const opt = optPaid[id] || [];
         return [...new Set([...db, ...opt])].sort((a, b) => a - b);
     }, [pagosPorHermano, optPaid]);
+
+    // Conteo de hermanos pendientes por sector (para el selector del cobrador)
+    const countsBySector = useMemo(() => {
+        const counts: Record<string, number> = {};
+        hermanos.forEach(h => {
+            if (!h.distrito) return;
+            const pend = 12 - effectivePaid(h.id).length;
+            counts[h.distrito] = (counts[h.distrito] || 0) + (pend > 0 ? 1 : 0);
+        });
+        return counts;
+    }, [hermanos, effectivePaid]);
 
     const stats = useMemo(() => {
         const alDia = hermanos.filter(h => effectivePaid(h.id).length === 12).length;
@@ -457,10 +453,15 @@ export default function CobradorPage() {
                                 onChange={e => setDistrito(e.target.value)}
                                 className="w-full appearance-none bg-slate-800 border border-slate-700 rounded-xl pl-3 pr-8 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-primary/50 transition-all"
                             >
-                                <option value="">🌐 Todos</option>
-                                {distritos.map(d => (
-                                    <option key={d} value={d}>{d}</option>
-                                ))}
+                                <option value="">🌐 Todos los sectores</option>
+                                {SECTORES_AYAMONTE.map(s => {
+                                    const pend = countsBySector[s.nombre] || 0;
+                                    return (
+                                        <option key={s.id} value={s.nombre}>
+                                            {s.nombre}{pend > 0 ? ` (${pend})` : ''}
+                                        </option>
+                                    );
+                                })}
                             </select>
                             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500 pointer-events-none" />
                         </div>

@@ -13,12 +13,7 @@ import { RegistrarHermanoUseCase } from '@/core/use-cases/secretaria/RegistrarHe
 import { ActualizarHermanoUseCase } from '@/core/use-cases/secretaria/ActualizarHermanoUseCase';
 import type { Hermano } from '@/core/domain/entities/Hermano';
 import { useState } from 'react';
-
-const DISTRITOS_AYAMONTE = [
-    'La Villa', 'La Ribera', 'Centro', 'Salón Santa Gadea', 'Salón Gadea',
-    'Federico Mayo', 'Costa Esuri', 'Isla Canela', 'Punta del Moral',
-    'Pozo del Camino', 'Las Moreras', 'Julio Romero de Torres', 'El Estanque'
-];
+import { SECTORES_AYAMONTE } from '@/lib/data/sectores-ayamonte';
 
 const repository = new InsForgeHermanoRepository();
 const registrarUseCase = new RegistrarHermanoUseCase(repository);
@@ -176,8 +171,8 @@ export function HermanoForm({ hermano, onSuccess, onCancel }: HermanoFormProps) 
                             className="w-full px-2 py-1.5 border rounded-md bg-background text-sm"
                         >
                             <option value="">-- No especificado --</option>
-                            {DISTRITOS_AYAMONTE.map(d => (
-                                <option key={d} value={d}>{d}</option>
+                            {SECTORES_AYAMONTE.map(s => (
+                                <option key={s.id} value={s.nombre}>{s.nombre}</option>
                             ))}
                         </select>
                         {errors.distrito && (
