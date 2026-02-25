@@ -120,11 +120,39 @@ export class InsForgeHermanoRepository implements HermanoRepository {
             .single();
 
         if (error) {
+            // Fallback: si el error es por columna inexistente (distrito, apodo, dirección),
+            // reintentamos sin los campos opcionales nuevos para no bloquear el guardado.
+            const isSchemaError =
+                error.message?.toLowerCase().includes('could not find') ||
+                error.message?.toLowerCase().includes('schema cache') ||
+                error.message?.toLowerCase().includes('column');
+
+            if (isSchemaError) {
+                console.warn('[InsForge] Campos opcionales no encontrados en schema. Reintentando sin ellos...', error.message);
+                const { distrito, apodo, direccion, ...safeData } = persistenceData;
+                const { data: data2, error: error2 } = await insforge.database
+                    .from('hermanos')
+                    .update(safeData)
+                    .eq('id', hermano.id)
+                    .select()
+                    .single();
+
+                if (error2) {
+                    throw new Error(`Error updating hermano: ${error2.message}`);
+                }
+                console.warn(
+                    '[InsForge] ATENCIÓN: La columna "distrito" no existe en la tabla "hermanos". ' +
+                    'Añádela en el panel de InsForge como TEXT nullable para habilitar el filtrado por sector.'
+                );
+                return this.mapToDomain(data2);
+            }
+
             throw new Error(`Error updating hermano: ${error.message}`);
         }
 
         return this.mapToDomain(data);
     }
+
 
     async updateMany(hermanos: Hermano[]): Promise<void> {
         if (hermanos.length === 0) return;
