@@ -129,7 +129,9 @@ export class InsForgeHermanoRepository implements HermanoRepository {
 
             if (isSchemaError) {
                 console.warn('[InsForge] Campos opcionales no encontrados en schema. Reintentando sin ellos...', error.message);
-                const { distrito, apodo, direccion, ...safeData } = persistenceData;
+                // Excluir TODOS los campos que pueden no existir en el schema de la BD
+                // (columnas añadidas después de la creación inicial de la tabla)
+                const { distrito, apodo, direccion, rol, user_id, ...safeData } = persistenceData;
                 const { data: data2, error: error2 } = await insforge.database
                     .from('hermanos')
                     .update(safeData)
